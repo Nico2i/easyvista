@@ -1,0 +1,76 @@
+{# Lignes de résultats réutilisées par l'accueil, le catalogue et les formulaires #}
+
+{% macro arrow() %}<span class="go"><span class="ic">{{ icon('arrow') }}</span></span>{% endmacro %}
+
+{% macro incident_row(o, prefix) %}
+    <a class="row" href="{{ path('app_incident', {sujet: o.key}) }}">
+        <span class="t">
+            <strong>{{ o.problemLabel }}</strong>
+            <small>{{ o.humanPath }}</small>
+            <span class="tag"><i class="inc">INCIDENT</i>{{ o.catalogPath(prefix) }}</span>
+        </span>{{ _self.arrow() }}
+    </a>
+{% endmacro %}
+
+{% macro service_row(o, families) %}
+    <a class="row" href="{{ path('app_request', {service: o.title}) }}">
+        <span class="t">
+            <strong>{{ o.title }}</strong>
+            <small>{{ families[o.family].libelle ?? '' }}{% if o.delay %} · délai indicatif {{ o.delay|lower }}{% endif %}</small>
+            <span class="tag"><i class="dem">DEMANDE</i>{{ o.title }}</span>
+        </span>{{ _self.arrow() }}
+    </a>
+{% endmacro %}
+
+{% macro family_row(key, family, count) %}
+    <a class="row" href="{{ path('app_catalogue', {famille: key}) }}">
+        <span class="t"><strong>Voir : {{ family.libelle }}</strong><small>{{ count }} services</small></span>{{ _self.arrow() }}
+    </a>
+{% endmacro %}
+
+{% macro access_type_row(key, label, count) %}
+    <a class="row" href="{{ path('app_access', {type: key}) }}">
+        <span class="t"><strong>Obtenir un accès à un(e) {{ label|lower }}</strong><small>{{ count }} ressources référencées</small></span>{{ _self.arrow() }}
+    </a>
+{% endmacro %}
+
+{% macro access_row(o, types) %}
+    <div class="row static">
+        <span class="t">
+            <strong>{{ o.name }}</strong>
+            <small>{{ types[o.type] ?? '' }}</small>
+            <span class="tag"><i class="dem">DEMANDE</i>{{ o.serviceTitle(1) }}</span>
+        </span>
+        <span class="acts">
+            {% for a in [1, 4, 2] %}{% if o.allows(a) %}
+                <a class="btn" href="{{ path('app_access', {ressource: o.name, action: a}) }}">{{ constant('App\\Catalog\\Model\\AccessResource::ACTIONS')[a].verbe }}</a>
+            {% endif %}{% endfor %}
+        </span>
+    </div>
+{% endmacro %}
+
+{% macro beneficiary(form, user) %}
+    <div class="field" data-beneficiary>
+        <span class="lbl">Pour qui&nbsp;?</span>
+        <div class="choices">
+            <div class="choice"><input type="radio" name="pour" id="pour-moi" value="moi" {{ (form.pour ?? 'moi') != 'collegue' ? 'checked' }}><label for="pour-moi"><b>Pour moi</b><small>{{ user.name }}</small></label></div>
+            <div class="choice"><input type="radio" name="pour" id="pour-collegue" value="collegue" {{ (form.pour ?? '') == 'collegue' ? 'checked' }}><label for="pour-collegue"><b>Pour un·e collègue</b><small>Vous indiquerez son nom</small></label></div>
+        </div>
+        <div class="suggest {{ (form.pour ?? '') != 'collegue' ? 'is-hidden' }}" data-colleague data-url="{{ path('app_colleagues') }}">
+            <input class="input" name="collegue" autocomplete="off" placeholder="Nom du ou de la collègue" value="{{ form.collegue ?? '' }}" aria-label="Nom du ou de la collègue">
+            <ul hidden></ul>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro attachment(maxFileMb) %}
+    <div class="field"><label for="pj">Capture d'écran ou document <span class="help">(facultatif, {{ maxFileMb }} Mo maximum)</span></label><input id="pj" name="piece_jointe" type="file"></div>
+{% endmacro %}
+
+{% macro hotline(portail, title) %}
+    <div class="panel hotline">
+        <div class="eyebrow">{{ title|default('Hotline DSN') }}</div>
+        <div class="num">{{ portail.hotline_numero }}</div>
+        <p>{{ portail.hotline_horaires }}</p>
+    </div>
+{% endmacro %}

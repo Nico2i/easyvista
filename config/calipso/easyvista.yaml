@@ -1,0 +1,39 @@
+# Correspondance avec EasyVista Service Manager (API REST v1).
+# Les points marqués « À VÉRIFIER » dépendent du paramétrage de votre instance.
+parameters:
+    calipso.easyvista:
+        # Langue des libellés du catalogue (suffixe des champs TITLE_xx / SD_CATALOG_PATH_xx)
+        langue: "%env(EASYVISTA_LANG)%"
+
+        # Code catalogue du « Sujet par défaut » des incidents (signalement sans sujet précis). À VÉRIFIER
+        code_incident_defaut: "%env(default::EASYVISTA_DEFAULT_INCIDENT_CODE)%"
+        # Code catalogue de la « Demande générique ». À VÉRIFIER
+        code_demande_generique: "%env(default::EASYVISTA_GENERIC_REQUEST_CODE)%"
+        # Préfixe du chemin des sujets d'incident dans le catalogue
+        prefixe_incidents: "Incidents/IT"
+
+        # Gêne exprimée par l'agent -> Urgency_ID EasyVista (voir GET /urgency). À VÉRIFIER
+        urgences:
+            bloquant: 1
+            gene: 2
+            attente: 3
+
+        # Lance le workflow dès la création (paramètre workflow_start)
+        lancer_workflow: true
+        # Envoie aussi Requestor_Mail / Requestor_Name (sinon le demandeur est le compte de l'API). À VÉRIFIER
+        envoyer_demandeur: true
+
+        # Filtre de « Mes demandes » (paramètre search de GET /requests).
+        # Variables : {employee_id}, {email}, {login}. À VÉRIFIER
+        recherche_mes_demandes: 'requestor.e_mail:"{email}"'
+        nb_max_mes_demandes: 100
+
+        # Type d'action EasyVista utilisé pour « Écrire aux intervenants » (POST /requests/{rfc}/actions).
+        # Vide = fonction masquée. À VÉRIFIER
+        type_action_message: "%env(default::EASYVISTA_MESSAGE_ACTION_TYPE_ID)%"
+
+        # Statuts EasyVista -> pastille affichée (expressions régulières, sans accents, testées dans l'ordre)
+        statuts:
+            ok: "clotur|termin|resolu|ferme|livre|annul|refus|rejet"
+            wait: "attente|valid|approb|suspend"
+            # tout le reste = « en cours »

@@ -1,0 +1,28 @@
+# Réglages d'affichage du portail
+parameters:
+    calipso.portail:
+        nom: "Calipso"
+        organisation: "Côtes d'Armor · DSN"
+        hotline_numero: "02 96 62 46 10"
+        hotline_horaires: "Du lundi au vendredi, 8h30–12h30 et 13h30–17h00."
+        # Adresse de l'ancien portail EasyVista (pages « À traiter », approbations…). Vide = liens masqués.
+        ancien_portail: "%env(default::CALIPSO_LEGACY_URL)%"
+        # Taille maximale d'une pièce jointe, en Mo
+        pj_max_mo: 5
+        liens_pied_de_page:
+            - { libelle: "Annuaire interne", url: "#" }
+            - { libelle: "Annuaire externe", url: "#" }
+            - { libelle: "Annuaire encadrant", url: "#" }
+            - { libelle: "Annuaire référent SI", url: "#" }
+            - { libelle: "Mentions légales", url: "#" }
+
+    # Services proposés dans « Services fréquents » sur l'accueil (intitulés exacts du catalogue)
+    calipso.raccourcis:
+        - "Planifier une réunion au siège"
+        - "Demander le référencement d'un nouvel espace GECO"
+        - "Annuler une réservation"
+        - "Demander une dérogation Firewall"
+        - "Demander un certificat serveur interne"
+        - "Modifier une réservation"
+        - "Demander le référencement d'un nouveau service applicatif"
+        - "Demander une simulation retraite"

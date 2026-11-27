@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/macros.html.twig' as ui %}
+{% block title %}Signaler un problème · {{ parent() }}{% endblock %}
+{% block aside_class %}{% endblock %}
+
+{% block body %}
+<div class="crumb"><a href="{{ path('app_home') }}">← Accueil</a><span>/</span><span>Signaler un problème</span></div>
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+<form class="formcard" method="post" action="{{ path('app_incident') }}" enctype="multipart/form-data">
+    <input type="hidden" name="_token" value="{{ csrf_token('incident') }}">
+    <div><div class="eyebrow">Signaler un problème</div><h1>Quelque chose ne fonctionne plus</h1></div>
+
+    <div class="field"><span class="lbl">Qu'est-ce qui est concerné&nbsp;?</span>
+        {% if subject %}
+            <input type="hidden" name="sujet" value="{{ subject.key }}">
+            <div class="picked"><span class="t"><b>{{ subject.name }}</b><small>{{ subject.humanPath }}</small><span class="tag"><i class="inc">INCIDENT</i>{{ subject.catalogPath(incidentPrefix) }}</span></span>
+                <a class="btn" href="{{ path('app_incident') }}">Changer</a></div>
+        {% else %}
+            <div class="filters" data-chips="#incident-list">
+                <button type="button" class="fchip" data-chip="all" aria-pressed="true">Tout</button>
+                {% for k, c in categories %}<button type="button" class="fchip" data-chip="{{ k }}" aria-pressed="false">{{ c.libelle }}</button>{% endfor %}
+            </div>
+            <input class="input" placeholder="Filtrer : Outlook, écran, GECO, Teams…" data-filter="#incident-list" aria-label="Filtrer les sujets">
+            <div class="list scroller" id="incident-list" data-limit="60">
+                {% for o in incidents %}
+                    <a class="row" href="{{ path('app_incident', {sujet: o.key}) }}" data-cats="{{ o.categories|join(' ') }}"><span class="t"><strong>{{ o.name }}</strong><small>{{ o.humanPath(false) ?: '—' }}</small></span></a>
+                {% endfor %}
+                <div class="empty" data-empty hidden>Rien trouvé. Laissez vide, la hotline qualifiera.</div>
+            </div>
+            <div class="help">Vous ne savez pas&nbsp;? Laissez vide, la hotline qualifiera votre signalement.</div>
+        {% endif %}
+    </div>
+
+    <div class="field"><label for="desc">Que se passe-t-il&nbsp;?</label>
+        <div class="help">Décrivez ce que vous voyez. Par exemple&nbsp;: «&nbsp;L'ordinateur ne démarre pas et reste silencieux&nbsp;», «&nbsp;Mes interlocuteurs ne m'entendent pas sur mon téléphone fixe&nbsp;».</div>
+        <textarea class="input" id="desc" name="description" required>{{ form.description ?? '' }}</textarea></div>
+
+    <div class="field"><span class="lbl">Quelle gêne pour vous&nbsp;?</span>
+        <div class="choices">
+            {% for k, g in genes %}
+                <div class="choice"><input type="radio" name="gene" id="gene-{{ k }}" value="{{ k }}" {{ (form.gene ?? 'attente') == k ? 'checked' }}><label for="gene-{{ k }}"><b>{{ g.libelle }}</b><small>{{ g.aide }}</small></label></div>
+            {% endfor %}
+        </div></div>
+
+    {{ ui.beneficiary(form, app.user) }}
+
+    <div class="field"><label for="tel">Numéro pour vous joindre <span class="help">(si différent du numéro habituel{% if app.user.employee.phone %}&nbsp;: {{ app.user.employee.phone }}{% endif %})</span></label>
+        <input class="input" id="tel" name="telephone" inputmode="tel" value="{{ form.telephone ?? '' }}"></div>
+
+    {{ ui.attachment(maxFileMb) }}
+
+    <div class="summary">→ EasyVista : Incident · Sujet = {{ subject ? subject.catalogPath(incidentPrefix) : incidentPrefix ~ '/Sujet par défaut' }}</div>
+    <div class="actions-bar"><a class="btn" href="{{ path('app_home') }}">Annuler</a><button class="btn primary big">Envoyer à la hotline</button></div>
+</form>
+{% endblock %}
+
+{% block aside %}
+<aside>
+    <div class="panel tips"><h3>Avant d'envoyer, essayez&nbsp;:</h3><ul>{% for t in tips %}<li>{{ t }}</li>{% endfor %}</ul></div>
+    {{ ui.hotline(portail, 'Urgent ? Appelez') }}
+</aside>
+{% endblock %}

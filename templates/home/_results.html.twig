@@ -1,0 +1,59 @@
+{% import '_partials/macros.html.twig' as ui %}
+{% set families = catalogue.families %}
+{% set types = catalogue.accessTypes %}
+{% set accessCounts = catalogue.accessCounts %}
+
+{% if result is null %}
+    <div class="sec-title"><h2>Ou choisissez votre situation</h2></div>
+    <div class="situations">
+        <a class="sit prob" href="{{ path('app_incident') }}"><span class="ic">{{ icon('wrench') }}</span><span><strong>Quelque chose ne fonctionne plus</strong><small>Ordinateur, téléphone, imprimante, application, connexion, mot de passe… Signalez-le, la hotline prend le relais.</small></span></a>
+        <a class="sit" href="{{ path('app_access') }}"><span class="ic">{{ icon('key') }}</span><span><strong>Accéder à une application, un dossier ou une boîte partagée</strong><small>Obtenir, modifier ou retirer un accès ({{ accessCount }} ressources)</small></span></a>
+        {% for k in situations %}{% if families[k] is defined %}
+            <a class="sit" href="{{ path('app_catalogue', {famille: k}) }}"><span class="ic">{{ icon(families[k].icone) }}</span><span><strong>{{ families[k].libelle }}</strong><small>{{ families[k].description }}</small></span></a>
+        {% endif %}{% endfor %}
+    </div>
+{% else %}
+    {% if result.needsClarification %}
+        <div class="clarify">
+            <p>{% if mode %}<b>Nous avons compris&nbsp;:</b> {{ mode == 'p' ? 'quelque chose ne fonctionne plus.' : 'vous avez un nouveau besoin.' }} Ce n'est pas ça&nbsp;?{% else %}<b>Pour bien vous orienter&nbsp;:</b> quelque chose ne fonctionne plus, ou vous avez besoin de quelque chose de nouveau&nbsp;?{% endif %}</p>
+            <div class="seg" role="group" aria-label="Type de situation">
+                <a href="{{ path('app_home', {q: q, mode: 'p'}) }}" data-mode="p" aria-current="{{ mode == 'p' ? 'true' : 'false' }}">Ça ne fonctionne plus</a>
+                <a href="{{ path('app_home', {q: q, mode: 'd'}) }}" data-mode="d" aria-current="{{ mode == 'd' ? 'true' : 'false' }}">J'ai un nouveau besoin</a>
+            </div>
+        </div>
+    {% endif %}
+
+    {% for group in result.groupOrder(mode) %}
+        {% if group == 'incidents' and result.incidents %}
+            <div class="group"><h3><span class="dot p"></span>Signaler que ça ne fonctionne plus</h3>
+                <div class="list">{% for o in result.incidents %}{{ ui.incident_row(o, prefixe_incidents) }}{% endfor %}</div>
+            </div>
+        {% elseif group == 'requests' and (result.services or result.families or result.accessTypes) %}
+            <div class="group"><h3><span class="dot"></span>Faire une demande</h3>
+                <div class="list">
+                    {% for rows in result.requestRowsOrder %}
+                        {% if rows == 'services' %}{% for o in result.services %}{{ ui.service_row(o, families) }}{% endfor %}
+                        {% elseif rows == 'types' %}{% for t in result.accessTypes %}{{ ui.access_type_row(t, types[t], accessCounts[t] ?? 0) }}{% endfor %}
+                        {% else %}{% for f in result.families %}{{ ui.family_row(f, families[f], catalogue.servicesOfFamily(f)|length) }}{% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% elseif group == 'access' and result.access %}
+            <div class="group"><h3><span class="dot"></span>Gérer un accès</h3>
+                <div class="list">{% for o in result.access %}{{ ui.access_row(o, types) }}{% endfor %}</div>
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    {% if result.isEmpty %}
+        <div class="list"><div class="empty">Aucun élément du catalogue ne correspond à «&nbsp;{{ q }}&nbsp;».</div></div>
+    {% endif %}
+
+    <div class="group" style="margin-top:8px"><h3>Vous ne trouvez pas&nbsp;?</h3>
+        <div class="list">
+            <a class="row" href="{{ path('app_incident') }}"><span class="t"><strong>Signaler un problème sans préciser le sujet</strong><small>La hotline qualifiera votre signalement</small><span class="tag"><i class="inc">INCIDENT</i>{{ prefixe_incidents }}/Sujet par défaut</span></span>{{ ui.arrow() }}</a>
+            <a class="row" href="{{ path('app_request', {service: 'Demande générique'}) }}"><span class="t"><strong>Faire une demande libre</strong><small>Décrivez votre besoin, il sera orienté vers la bonne équipe</small><span class="tag"><i class="dem">DEMANDE</i>Demande générique</span></span>{{ ui.arrow() }}</a>
+        </div>
+    </div>
+{% endif %}

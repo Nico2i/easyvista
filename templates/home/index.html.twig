@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/macros.html.twig' as ui %}
+{% set nav = 'accueil' %}
+
+{% block hero %}
+<section class="hero"><div class="wrap">
+    <h1>Bonjour {{ app.user.firstName }}, de quoi avez-vous besoin&nbsp;?</h1>
+    <p class="lead">Décrivez votre situation avec vos mots. Calipso vous oriente vers le bon formulaire&nbsp;: inutile de savoir s'il s'agit d'un incident ou d'une demande.</p>
+    <form class="search" id="sform" role="search" action="{{ path('app_home') }}" method="get" data-orientation-url="{{ path('app_orientation') }}">
+        <input id="q" name="q" type="search" autocomplete="off" placeholder="Ex. : mon écran reste noir, un nouvel agent arrive, accès à GECO…" value="{{ q }}" aria-label="Décrivez votre besoin">
+        <button type="submit">Chercher</button>
+    </form>
+    <div class="examples"><span>Essayez&nbsp;:</span>
+        {% for e in examples %}<button class="chip" type="button" data-example="{{ e }}">{{ e }}</button>{% endfor %}
+    </div>
+    <svg class="waves" viewBox="0 0 600 220" aria-hidden="true"><g fill="none" stroke="#7fd1c7" stroke-width="2">
+        {% for i in 0..5 %}{% set y = 60 + i * 28 %}<path d="M0 {{ y }} C 80 {{ y - 30 }}, 160 {{ y + 30 }}, 240 {{ y }} S 400 {{ y - 30 }}, 480 {{ y }} S 600 {{ y + 30 }}, 640 {{ y }}"/>{% endfor %}
+    </g></svg>
+</div></section>
+{% endblock %}
+
+{% block aside_class %}{% endblock %}
+
+{% block body %}
+    <div id="results" aria-live="polite">{{ include('home/_results.html.twig') }}</div>
+{% endblock %}
+
+{% block aside %}
+<aside>
+    {% set c = calipso_counters() %}
+    {% if c %}
+    <div class="panel">
+        <h3>Mon activité</h3>
+        <div class="kv"><a href="{{ path('app_my_requests') }}">Mes demandes en cours</a><b>{{ c.open }}</b></div>
+        <div class="kv"><a href="{{ path('app_my_requests') }}">Mes problèmes signalés</a><b>{{ c.problems }}</b></div>
+        {% if c.approvals is not null %}
+            <div class="kv"><a href="{{ path('app_todo') }}">Approbations à donner</a><b>{{ c.approvals }}</b></div>
+            <div class="kv"><a href="{{ path('app_todo') }}">Mes actions</a><b>{{ c.actions }}</b></div>
+            <div class="kv"><a href="{{ path('app_todo') }}">Actions de mes groupes</a><b>{{ c.groupActions }}</b></div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if shortcuts %}
+    <div class="panel">
+        <h3>Services fréquents</h3>
+        <div class="fav">{% for t in shortcuts %}<a href="{{ path('app_request', {service: t}) }}">{{ t }}</a>{% endfor %}</div>
+    </div>
+    {% endif %}
+    {{ ui.hotline(portail) }}
+</aside>
+{% endblock %}

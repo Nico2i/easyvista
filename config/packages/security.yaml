@@ -1,0 +1,20 @@
+security:
+    providers:
+        # Les agents sont chargés depuis EasyVista (GET /employees) à partir de leur login Windows
+        portal_users:
+            id: App\Security\PortalUserProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler(/|$)|(_wdt|css|js|images|build)/)
+            security: false
+        main:
+            provider: portal_users
+            # Authentification unique : le login est fourni par le serveur web (REMOTE_USER, Kerberos/NTLM)
+            # ou, en développement, par CALIPSO_DEV_LOGIN. Voir src/Security/PortalAuthenticator.php
+            custom_authenticators:
+                - App\Security\PortalAuthenticator
+            entry_point: App\Security\PortalAuthenticator
+
+    access_control:
+        - { path: ^/, roles: ROLE_USER }

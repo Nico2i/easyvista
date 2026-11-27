@@ -1,0 +1,23 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    session: true
+    # Le portail est en français
+    default_locale: fr
+
+    http_client:
+        scoped_clients:
+            # Client HTTP de l'API REST EasyVista (authentification ajoutée par HttpEasyVistaClient)
+            easyvista.client:
+                base_uri: '%env(EASYVISTA_BASE_URI)%'
+                timeout: 20
+                verify_peer: '%env(bool:EASYVISTA_VERIFY_SSL)%'
+                verify_host: '%env(bool:EASYVISTA_VERIFY_SSL)%'
+                headers:
+                    Accept: 'application/json'
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

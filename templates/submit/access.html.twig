@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/macros.html.twig' as ui %}
+{% block title %}Gérer un accès · {{ parent() }}{% endblock %}
+{% block aside_class %}{% endblock %}
+
+{% block body %}
+<div class="crumb"><a href="{{ path('app_home') }}">← Accueil</a><span>/</span><span>Gérer un accès</span></div>
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+<form class="formcard" method="{{ resource ? 'post' : 'get' }}" action="{{ path('app_access') }}" data-access-form>
+    {% if resource %}
+        <input type="hidden" name="_token" value="{{ csrf_token('access') }}">
+        <input type="hidden" name="ressource" value="{{ resource.name }}">
+    {% endif %}
+    {% if type != 'all' and not resource %}<input type="hidden" name="type" value="{{ type }}">{% endif %}
+    <div><div class="eyebrow">Accès</div><h1>Application, dossier partagé, boîte mail partagée</h1></div>
+
+    <div class="field"><span class="lbl">Que voulez-vous faire&nbsp;?</span>
+        <div class="choices">
+            {% for a, def in actions %}
+                <div class="choice"><input type="radio" name="action" id="action-{{ a }}" value="{{ a }}" {{ action == a ? 'checked' }} {{ resource and not resource.allows(a) ? 'disabled' }} data-autosubmit><label for="action-{{ a }}"><b>{{ def.libelle }}</b><small>{{ def.aide }}</small></label></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if resource %}
+        <div class="field"><span class="lbl">Ressource</span>
+            <div class="picked dem"><span class="t"><b>{{ resource.name }}</b><small>{{ types[resource.type] ?? '' }}</small></span>
+                <a class="btn" href="{{ path('app_access', {action: action}) }}">Changer</a></div>
+        </div>
+        {{ ui.beneficiary(form, app.user) }}
+        <div class="field"><label for="why">Pourquoi&nbsp;?</label>
+            <div class="help">Votre justification aide le valideur à répondre plus vite.</div>
+            <textarea class="input" id="why" name="justification">{{ form.justification ?? '' }}</textarea></div>
+        <div class="summary">→ EasyVista : Demande de service · Service = {{ resource.serviceTitle(action) }}</div>
+        <div class="actions-bar"><a class="btn" href="{{ path('app_home') }}">Annuler</a><button class="btn primary big">Envoyer la demande</button></div>
+    {% else %}
+        <div class="field"><span class="lbl">Sur quelle ressource&nbsp;?</span>
+            <div class="filters" data-chips="#access-list">
+                <button type="button" class="fchip" data-chip="all" aria-pressed="{{ type == 'all' ? 'true' : 'false' }}">Toutes</button>
+                {% for k, label in types %}<button type="button" class="fchip" data-chip="{{ k }}" aria-pressed="{{ type == k ? 'true' : 'false' }}">{{ label }}<span class="count">{{ counts[k] ?? 0 }}</span></button>{% endfor %}
+            </div>
+            <input class="input" placeholder="Nom de l'application, du dossier ou de l'adresse mail" data-filter="#access-list" aria-label="Rechercher une ressource">
+            <div class="list scroller" id="access-list" data-limit="80">
+                {% for r in resources %}
+                    <a class="row" href="{{ path('app_access', {ressource: r.name, action: action}) }}" data-cats="{{ r.type }}"><span class="t"><strong>{{ r.name }}</strong><small>{{ types[r.type] ?? '' }}</small></span>{{ ui.arrow() }}</a>
+                {% endfor %}
+                <div class="empty" data-more hidden></div>
+                <div class="empty" data-empty hidden>Aucune ressource ne correspond.</div>
+            </div>
+        </div>
+        <noscript><button class="btn">Mettre à jour la liste</button></noscript>
+    {% endif %}
+</form>
+{% endblock %}
+
+{% block aside %}
+<aside>
+    <div class="panel"><h3>Ce parcours remplace</h3><p class="help" style="margin:0">{{ accessEntries|number_format(0, ',', ' ') }} entrées du catalogue actuel («&nbsp;Demander à accéder à…&nbsp;», «&nbsp;…la révocation d'un accès…&nbsp;», «&nbsp;…la modification…&nbsp;», «&nbsp;…un relevé…&nbsp;») sur {{ accessCount }} ressources.</p></div>
+    <div class="panel"><h3>Introuvable&nbsp;?</h3><div class="fav">
+        <a href="{{ path('app_request', {service: 'Demander le référencement d\'un nouveau Q:'}) }}">Faire référencer un nouveau dossier Q:</a>
+        <a href="{{ path('app_request', {service: 'Demander le référencement d\'une nouvelle boite fonctionnelle'}) }}">Faire référencer une boîte fonctionnelle</a>
+        <a href="{{ path('app_request', {service: 'Demander le référencement d\'un nouveau service applicatif'}) }}">Faire référencer une application</a>
+    </div></div>
+</aside>
+{% endblock %}

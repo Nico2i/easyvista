@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+{% block title %}Accès impossible · {{ parent() }}{% endblock %}
+{% block body %}
+<div class="formcard denied">
+    <h1>Accès impossible</h1>
+    <p>{{ reason }}</p>
+    <p class="help">Besoin d'aide&nbsp;? Hotline DSN&nbsp;: <b>{{ portail.hotline_numero }}</b></p>
+</div>
+{% endblock %}

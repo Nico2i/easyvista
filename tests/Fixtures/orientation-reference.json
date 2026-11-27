@@ -1,0 +1,344 @@
+[
+ {
+  "q": "Mon imprimante n'imprime plus",
+  "mode": "p",
+  "inc": [
+   "Imprimante",
+   "Multifonction"
+  ],
+  "svc": [
+   "Demander l'accès à un nouveau point d'impression",
+   "Commander des consommables pour imprimante",
+   "Demander une imprimante"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "J'ai besoin d'une imprimante",
+  "mode": "d",
+  "inc": [
+   "Imprimante",
+   "Multifonction"
+  ],
+  "svc": [
+   "Demander l'accès à un nouveau point d'impression",
+   "Commander des consommables pour imprimante",
+   "Demander une imprimante"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Un stagiaire arrive lundi",
+  "mode": "d",
+  "inc": [],
+  "svc": [
+   "Déclarer l'arrivée d'un agent",
+   "Demander l'ouverture d'un compte informatique externe",
+   "Demander un ordinateur portable standard"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Je n'ai plus accès à GECO",
+  "mode": "p",
+  "inc": [
+   "GECO"
+  ],
+  "svc": [
+   "Demander la création d'un espace GECO",
+   "Demander la suppression d'un espace GECO",
+   "Demander le référencement d'un nouvel espace GECO"
+  ],
+  "acc": [
+   "GECO (ne pas utiliser pour demander l'accès à un espace)",
+   "GECO ALFRESCO",
+   "GECOPE"
+  ],
+  "fam": [],
+  "atype": [],
+  "svcExact": true,
+  "accFirst": false
+ },
+ {
+  "q": "Accès au dossier Q: DRHQVT",
+  "mode": "d",
+  "inc": [],
+  "svc": [],
+  "acc": [
+   "Q: DRHQVT"
+  ],
+  "fam": [],
+  "atype": [
+   "q",
+   "proj"
+  ],
+  "svcExact": false,
+  "accFirst": true
+ },
+ {
+  "q": "Excel plante à l'ouverture",
+  "mode": "p",
+  "inc": [
+   "EXCEL"
+  ],
+  "svc": [
+   "Demander l'ouverture d'un compte informatique externe"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Mon écran reste noir",
+  "mode": "p",
+  "inc": [
+   "Ecran"
+  ],
+  "svc": [
+   "Demander un écran d'ordinateur"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Réserver la Clio",
+  "mode": "d",
+  "inc": [],
+  "svc": [
+   "Réserver la Clio DK-437-VK",
+   "Réserver la Clio FA-787-ND",
+   "Planifier une réunion au siège",
+   "Modifier une réservation",
+   "Annuler une réservation"
+  ],
+  "acc": [],
+  "fam": [
+   "resa"
+  ],
+  "atype": [],
+  "svcExact": true,
+  "accFirst": false
+ },
+ {
+  "q": "J'ai reçu un mail suspect",
+  "mode": "p",
+  "inc": [
+   "Cybersécurité",
+   "OUTLOOK",
+   "OUTLOOK WEB APP"
+  ],
+  "svc": [
+   "Demander la création d'une boite aux lettres fonctionnelle"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [
+   "bal"
+  ],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Mot de passe oublié",
+  "mode": "p",
+  "inc": [
+   "Accès système par login et password",
+   "Accès bureautique",
+   "Accès applicatifs"
+  ],
+  "svc": [],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Accéder au dossier partagé de mon service",
+  "mode": "d",
+  "inc": [],
+  "svc": [],
+  "acc": [],
+  "fam": [],
+  "atype": [
+   "q",
+   "proj"
+  ],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Je ne peux plus me connecter en télétravail",
+  "mode": "p",
+  "inc": [
+   "Accès télétravail",
+   "IVANTI Secure Access Client",
+   "VPN SSL"
+  ],
+  "svc": [
+   "Emprunter un portable intégré au domaine"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Réserver une salle de réunion",
+  "mode": "d",
+  "inc": [],
+  "svc": [
+   "Planifier une réunion au siège",
+   "Modifier une réservation",
+   "Annuler une réservation"
+  ],
+  "acc": [],
+  "fam": [
+   "resa"
+  ],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "Outlook ne s'ouvre plus",
+  "mode": "p",
+  "inc": [
+   "OUTLOOK",
+   "OUTLOOK WEB APP"
+  ],
+  "svc": [
+   "Demander la création d'une boite aux lettres fonctionnelle"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [
+   "bal"
+  ],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "besoin d'un deuxième écran",
+  "mode": "d",
+  "inc": [
+   "Ecran"
+  ],
+  "svc": [
+   "Demander un écran d'ordinateur"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "ASTRE RH",
+  "mode": null,
+  "inc": [
+   "ASTRE RH",
+   "E-SEDIT-RH"
+  ],
+  "svc": [],
+  "acc": [
+   "ASTRE RH",
+   "univers BO pour ASTRE RH",
+   "espace projet PROJ_MDDD_RH",
+   "espace projet PROJ_MDDS_RH",
+   "espace projet PROJ_Politique_RH_Jeunesse",
+   "espace projet PROJ_Reforme_Politiques_RH"
+  ],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": true
+ },
+ {
+  "q": "Teams",
+  "mode": null,
+  "inc": [
+   "TEAMS",
+   "VISIO CONFERENCE"
+  ],
+  "svc": [
+   "Réserver une salle d'audioconférence",
+   "Demander un casque audio pour ordinateur"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "demander une simulation retraite",
+  "mode": "d",
+  "inc": [
+   "Smartphone",
+   "Téléphone mobile",
+   "SIM"
+  ],
+  "svc": [
+   "Demander une simulation retraite",
+   "Demander une mise à jour de carrière",
+   "Demander un smartphone",
+   "Demander un chargeur de téléphone sur secteur"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "mon téléphone ne sonne plus",
+  "mode": "p",
+  "inc": [
+   "Téléphone IP",
+   "Ligne téléphonique"
+  ],
+  "svc": [
+   "Demander un téléphone fixe",
+   "Demander un transfert d'appels vers DIS"
+  ],
+  "acc": [],
+  "fam": [],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ },
+ {
+  "q": "installer un logiciel de cartographie",
+  "mode": "d",
+  "inc": [],
+  "svc": [
+   "Demander le référencement d'un nouveau logiciel ou d'une nouvelle version"
+  ],
+  "acc": [],
+  "fam": [
+   "log"
+  ],
+  "atype": [],
+  "svcExact": false,
+  "accFirst": false
+ }
+]

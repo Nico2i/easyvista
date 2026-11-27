@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}{{ portail.nom }}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400&display=swap">
+    <link rel="stylesheet" href="{{ asset('css/calipso.css') }}">
+    <script src="{{ asset('js/calipso.js') }}" defer></script>
+</head>
+{% set nav = nav|default('') %}
+{% set counters = app.user ? calipso_counters() : null %}
+<body>
+<header class="top">
+    <div class="wrap">
+        <a class="brand" href="{{ path('app_home') }}"><b>{{ portail.nom }}</b><span>{{ portail.organisation }}</span></a>
+        {% if app.user %}
+        <nav class="nav" aria-label="Navigation principale">
+            <a href="{{ path('app_home') }}" {% if nav == 'accueil' %}aria-current="page"{% endif %}>Accueil</a>
+            <a href="{{ path('app_my_requests') }}" {% if nav == 'mes-demandes' %}aria-current="page"{% endif %}>Mes demandes{% if counters %} <span class="count">{{ counters.open }}</span>{% endif %}</a>
+            {% if counters and counters.approvals is not null %}
+                <a href="{{ path('app_todo') }}" {% if nav == 'a-traiter' %}aria-current="page"{% endif %}>À traiter <span class="count">{{ counters.approvals + counters.actions + counters.groupActions }}</span></a>
+            {% else %}
+                <a href="{{ path('app_todo') }}" {% if nav == 'a-traiter' %}aria-current="page"{% endif %}>À traiter</a>
+            {% endif %}
+            <a href="{{ path('app_logic') }}" {% if nav == 'logique' %}aria-current="page"{% endif %}>Comment ça marche</a>
+        </nav>
+        {% if easyvista_simule %}<span class="sim" title="EASYVISTA_MODE=mock : rien n'est envoyé à EasyVista">Mode démonstration</span>{% endif %}
+        <label class="dsn" title="Affiche, sur chaque résultat, le sujet d'incident ou le service EasyVista qui sera créé"><input type="checkbox" id="logicToggle"> Vue DSN</label>
+        <div class="me"><span class="avatar">{{ app.user.initials }}</span><span class="name">{{ app.user.name }}</span></div>
+        {% endif %}
+    </div>
+</header>
+
+{% block hero %}{% endblock %}
+
+{% block main %}
+<main><div class="wrap {% block aside_class %}single{% endblock %}">
+    <div style="min-width:0">
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}<div class="alert {{ type }}" role="status">{{ message }}</div>{% endfor %}
+        {% endfor %}
+        {% block body %}{% endblock %}
+    </div>
+    {% block aside %}{% endblock %}
+</div></main>
+{% endblock %}
+
+<footer>
+    <div class="wrap">
+        {% for lien in portail.liens_pied_de_page %}<a href="{{ lien.url }}">{{ lien.libelle }}</a>{% endfor %}
+        <span class="proto">{% if easyvista_simule %}Démonstration · aucune demande n'est réellement envoyée{% else %}Calipso · DSN{% endif %}</span>
+    </div>
+</footer>
+</body>
+</html>

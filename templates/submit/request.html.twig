@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/macros.html.twig' as ui %}
+{% block title %}{{ service.title }} · {{ parent() }}{% endblock %}
+{% set familyLabel = family.libelle ?? 'Demande' %}
+
+{% block body %}
+<div class="crumb"><a href="{{ path('app_home') }}">← Accueil</a><span>/</span>{% if family %}<a href="{{ path('app_catalogue', {famille: service.family}) }}">{{ familyLabel }}</a>{% else %}<span>{{ familyLabel }}</span>{% endif %}</div>
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+<form class="formcard" method="post" action="{{ path('app_request') }}" enctype="multipart/form-data">
+    <input type="hidden" name="_token" value="{{ csrf_token('request') }}">
+    <input type="hidden" name="service" value="{{ service.title }}">
+    <div><div class="eyebrow">{{ familyLabel }}</div><h1>{{ service.title }}</h1></div>
+    <div class="meta">
+        {% if service.delay %}<span>Délai indicatif&nbsp;: <b>{{ service.delay }}</b></span>{% endif %}
+        {% if service.validator %}<span>Validée par&nbsp;: <b>{{ service.validator }}</b></span>{% endif %}
+    </div>
+
+    {{ ui.beneficiary(form, app.user) }}
+
+    {% if service.maxQuantity > 0 %}
+        <div class="field"><label for="qty">Quantité <span class="help">(maximum {{ service.maxQuantity }})</span></label>
+            <input class="input" id="qty" name="quantite" type="number" min="1" max="{{ service.maxQuantity }}" value="{{ form.quantite ?? 1 }}" style="max-width:140px"></div>
+    {% endif %}
+
+    <div class="field"><label for="desc">Précisions utiles</label>
+        <div class="help">Contexte, date souhaitée, lieu…{% if service.title == 'Demande générique' %} Décrivez votre besoin le plus précisément possible.{% endif %}</div>
+        <textarea class="input" id="desc" name="precisions" {{ service.title == 'Demande générique' ? 'required' }}>{{ form.precisions ?? '' }}</textarea></div>
+
+    {{ ui.attachment(maxFileMb) }}
+
+    <div class="summary">→ EasyVista : Demande de service · Service = {{ service.title }}{% if service.validator %} · Validation = {{ service.validator }}{% endif %}</div>
+    <div class="actions-bar"><a class="btn" href="{{ path('app_home') }}">Annuler</a><button class="btn primary big">Envoyer la demande</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,53 @@
+# Rubriques du catalogue de services (le classement de chaque service est fait
+# à l'import par la commande calipso:catalogue:import, voir src/Command/ImportCatalogueCommand.php).
+parameters:
+    calipso.rubriques:
+        mat: { libelle: "Matériel informatique et téléphonie", description: "Ordinateur, écran, téléphone, accessoires, prêt de matériel", icone: laptop }
+        log: { libelle: "Installer un logiciel", description: "Retouche d'image, CAO, cartographie, PDF…", icone: cube }
+        resa: { libelle: "Réserver une salle, un véhicule, du matériel", description: "Salles de réunion, bureaux d'entretien, véhicules, vidéoprojecteurs", icone: cal }
+        four: { libelle: "Commander des fournitures", description: "Enveloppes, papier traceur, consommables, CD/DVD", icone: box }
+        rh: { libelle: "Ma situation d'agent", description: "Retraite, carrière, arrivée et départ d'un agent, absence", icone: user }
+        secu: { libelle: "Comptes, espaces partagés et sécurité", description: "Compte externe, boîte fonctionnelle, certificat, site bloqué", icone: shield }
+        fin: { libelle: "Finances, assurances et véhicules", description: "Sinistres, tiers Coriolis, mandats et titres", icone: euro }
+        reception: { libelle: "Organiser une réception", description: "Boissons et restauration pour un événement", icone: people }
+        proj: { libelle: "Projets et autres demandes", description: "Soumettre un projet, étude, serveur, suggestion", icone: bulb }
+
+    # Rubriques affichées en tuiles sur l'accueil (dans cet ordre)
+    calipso.situations: [mat, log, resa, rh, four, secu, fin, proj]
+
+    # Types de ressources du parcours « accès »
+    calipso.types_acces:
+        app: "Application"
+        bal: "Boîte mail partagée"
+        q: "Dossier partagé (Q:)"
+        proj: "Espace projet"
+        bo: "Tableau de bord BO"
+
+    # Catégories de sujets d'incident (filtres du formulaire « Signaler un problème »)
+    # filtre : expression régulière testée sur « chemin/nom » du sujet ; famille : famille calculée à l'import
+    calipso.categories_incident:
+        poste: { libelle: "Mon poste de travail", filtre: "Ordinateur|Périphérique" }
+        tel: { libelle: "Téléphonie", filtre: "Téléphonie" }
+        imp: { libelle: "Impression", filtre: "Impression" }
+        app: { libelle: "Une application", famille: log }
+        acc: { libelle: "Connexion, accès, mot de passe", famille: acc }
+        res: { libelle: "Réseau, internet, visio", famille: eqc }
+        cyb: { libelle: "Sécurité", famille: cyb }
+
+    # Conseils affichés avant l'envoi d'un signalement (clé = catégorie ci-dessus, « def » par défaut)
+    calipso.conseils:
+        poste:
+            - "Redémarrez complètement l'ordinateur (Démarrer › Redémarrer), pas seulement la mise en veille."
+            - "Vérifiez que les câbles d'alimentation et d'écran sont bien branchés."
+        imp:
+            - "Vérifiez le message affiché sur l'écran de la multifonction (papier, bourrage, toner)."
+            - "Essayez d'imprimer un autre document pour savoir si le problème vient du fichier."
+        acc:
+            - "Vérifiez que la touche Verr. Maj n'est pas activée."
+            - "Si votre mot de passe a expiré, vous pouvez le changer avec Ctrl+Alt+Suppr."
+        cyb:
+            - "Ne cliquez sur aucun lien et n'ouvrez pas la pièce jointe."
+            - "Ne supprimez pas le message : il peut servir à l'analyse."
+        def:
+            - "Notez le message d'erreur exact, ou faites une capture d'écran (touche Impr. écran)."
+            - "Précisez depuis quand le problème se produit et si des collègues sont touchés."

@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+imports:
+    # Réglages métier de Calipso (dictionnaire de besoins, rubriques, EasyVista…)
+    - { resource: 'calipso/*.yaml' }
+
+parameters:
+    calipso.catalogue_file: '%kernel.project_dir%/data/catalogue.json'
+    calipso.codes_file: '%kernel.project_dir%/data/catalog-codes.json'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            string $catalogueFile: '%calipso.catalogue_file%'
+            string $codesFile: '%calipso.codes_file%'
+            array $easyvistaOptions: '%calipso.easyvista%'
+            array $portal: '%calipso.portail%'
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+            - '../src/Catalog/Model/'
+            - '../src/EasyVista/Dto/'
+            - '../src/Orientation/OrientationResult.php'
+            - '../src/Security/PortalUser.php'
+
+    App\Catalog\Catalog:
+        arguments:
+            $families: '%calipso.rubriques%'
+            $accessTypes: '%calipso.types_acces%'
+            $incidentCategories: '%calipso.categories_incident%'
+
+    App\Orientation\NeedDictionary:
+        arguments:
+            $entries: '%calipso.besoins%'
+            $problemPattern: '%calipso.ton_probleme%'
+            $needPattern: '%calipso.ton_besoin%'
+            $stopWords: '%calipso.mots_vides%'
+            $genericWords: '%calipso.mots_generiques%'
+
+    # Choix du client EasyVista : EASYVISTA_MODE=mock (démo, aucune connexion) ou api (appels réels)
+    App\EasyVista\HttpEasyVistaClient:
+        arguments:
+            $client: '@easyvista.client'
+            $login: '%env(EASYVISTA_LOGIN)%'
+            $password: '%env(EASYVISTA_PASSWORD)%'
+            $token: '%env(EASYVISTA_TOKEN)%'
+
+    App\EasyVista\MockEasyVistaClient:
+        arguments:
+            $storageDir: '%kernel.project_dir%/var/mock'
+
+    App\EasyVista\EasyVistaClientInterface:
+        factory: ['@App\EasyVista\EasyVistaClientFactory', 'create']
+        arguments: ['%env(EASYVISTA_MODE)%']
+
+    App\Security\PortalAuthenticator:
+        arguments:
+            $serverVar: '%env(CALIPSO_SSO_SERVER_VAR)%'
+            $devLogin: '%env(CALIPSO_DEV_LOGIN)%'

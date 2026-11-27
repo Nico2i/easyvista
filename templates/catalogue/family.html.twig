@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/macros.html.twig' as ui %}
+{% block title %}{{ family.libelle }} · {{ parent() }}{% endblock %}
+{% block aside_class %}{% endblock %}
+
+{% block body %}
+<div class="crumb"><a href="{{ path('app_home') }}">← Accueil</a><span>/</span><span>{{ family.libelle }}</span></div>
+<div class="sec-title"><h2>{{ family.libelle }}</h2><small>{{ services|length }} services</small></div>
+<input class="input" placeholder="Filtrer dans cette rubrique" style="margin-bottom:12px" data-filter="#family-list" aria-label="Filtrer les services">
+<div class="list" id="family-list">
+    {% for s in services %}{{ ui.service_row(s, families) }}{% endfor %}
+    <div class="empty" data-empty hidden>Aucun service ne correspond.</div>
+</div>
+{% endblock %}
+
+{% block aside %}
+<aside>
+    <div class="panel"><h3>Autres rubriques</h3>
+        <div class="fav">{% for k, f in families %}{% if k != key %}<a href="{{ path('app_catalogue', {famille: k}) }}">{{ f.libelle }}</a>{% endif %}{% endfor %}</div>
+    </div>
+</aside>
+{% endblock %}

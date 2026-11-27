@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+{% set nav = 'a-traiter' %}
+{% block title %}À traiter · {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="sec-title"><h2>À traiter</h2><small>Pour les agents qui valident ou interviennent</small></div>
+{% set c = calipso_counters() %}
+{% if c and c.approvals is not null %}
+    <div class="bigstats">
+        <div><b>{{ c.approvals }}</b><small>Approbation à donner</small></div>
+        <div><b>{{ c.actions }}</b><small>Mes actions</small></div>
+        <div><b>{{ c.groupActions }}</b><small>Actions de mes groupes</small></div>
+        <div><b>0</b><small>Clôtures à confirmer</small></div>
+    </div>
+{% endif %}
+<p class="help" style="margin-top:16px">Approbations, actions personnelles et actions de groupe se traitent pour l'instant dans EasyVista. Ces entrées occupaient la moitié de la barre de navigation alors qu'elles ne concernent qu'une partie des agents&nbsp;: elles sont regroupées ici.</p>
+{% if portail.ancien_portail %}
+    <p><a class="btn primary big" href="{{ portail.ancien_portail }}">Ouvrir EasyVista</a></p>
+{% endif %}
+{% endblock %}

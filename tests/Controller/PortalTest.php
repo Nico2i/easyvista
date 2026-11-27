@@ -1,0 +1,161 @@
+<?php
+
+namespace App\Tests\Controller;
+
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Filesystem\Filesystem;
+
+/** Parcours complets en mode démonstration (EASYVISTA_MODE=mock, agent CALIPSO_DEV_LOGIN). */
+final class PortalTest extends WebTestCase
+{
+    private KernelBrowser $client;
+
+    protected function setUp(): void
+    {
+        $this->client = self::createClient();
+        (new Filesystem())->remove(self::getContainer()->getParameter('kernel.project_dir').'/var/mock');
+    }
+
+    public function testHomeGreetsAgentAndShowsSituations(): void
+    {
+        $this->client->request('GET', '/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Bonjour Camille');
+        self::assertSelectorTextContains('.situations', 'Quelque chose ne fonctionne plus');
+        self::assertSelectorExists('.sit[href="/catalogue/mat"]');
+    }
+
+    public function testHomeWithQueryRendersResultsWithoutJavascript(): void
+    {
+        $this->client->request('GET', '/', ['q' => 'Mon imprimante n\'imprime plus']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('#results .group h3', 'Signaler que ça ne fonctionne plus');
+        self::assertSelectorTextContains('#results .row strong', 'Imprimante ne fonctionne pas correctement');
+    }
+
+    public function testOrientationFragment(): void
+    {
+        $this->client->xmlHttpRequest('GET', '/orientation', ['q' => 'Un stagiaire arrive lundi']);
+
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('<html', (string) $this->client->getResponse()->getContent());
+        self::assertSelectorTextContains('.group h3', 'Faire une demande');
+        self::assertSelectorTextContains('.group .row strong', 'Déclarer l\'arrivée d\'un agent');
+    }
+
+    public function testClarificationCanBeForced(): void
+    {
+        $this->client->xmlHttpRequest('GET', '/orientation', ['q' => 'GECO', 'mode' => 'd']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('.seg a[data-mode="d"][aria-current="true"]');
+    }
+
+    public function testReportIncidentEndToEnd(): void
+    {
+        $crawler = $this->client->request('GET', '/signaler', ['sujet' => 'Equipement de proximité/Impression/Imprimante']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.picked b', 'Imprimante');
+
+        $form = $crawler->selectButton('Envoyer à la hotline')->form([
+            'description' => 'L\'imprimante du 2e étage affiche « bourrage » en permanence.',
+            'gene' => 'gene',
+        ]);
+        $this->client->submit($form);
+
+        self::assertResponseRedirects();
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('h1', 'Votre signalement est enregistré');
+        self::assertSelectorTextContains('.ticket', 'I'.date('ymd'));
+
+        $this->client->request('GET', '/mes-demandes');
+        self::assertSelectorTextContains('.list', 'Imprimante : L\'imprimante du 2e étage');
+    }
+
+    public function testIncidentWithoutDescriptionIsRejected(): void
+    {
+        $crawler = $this->client->request('GET', '/signaler');
+        $form = $crawler->selectButton('Envoyer à la hotline')->form(['description' => '   ']);
+        $this->client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('.alert.error', 'Décrivez ce qui se passe');
+    }
+
+    public function testServiceRequestForColleague(): void
+    {
+        $crawler = $this->client->request('GET', '/demande', ['service' => 'Demander un écran d\'ordinateur']);
+        self::assertResponseIsSuccessful();
+
+        $form = $crawler->selectButton('Envoyer la demande')->form([
+            'pour' => 'collegue',
+            'collegue' => 'DURAND Claire <claire.durand@example.org>',
+            'precisions' => 'Second écran pour le poste 214',
+        ]);
+        $this->client->submit($form);
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('h1', 'Votre demande est envoyée');
+        $stored = json_decode((string) file_get_contents(self::getContainer()->getParameter('kernel.project_dir').'/var/mock/tickets.json'), true);
+        self::assertSame('DURAND Claire', $stored[0]['recipient']);
+        self::assertStringContainsString('Demandé par MARTIN Camille', $stored[0]['description']);
+    }
+
+    public function testUnknownServiceRedirectsHome(): void
+    {
+        $this->client->request('GET', '/demande', ['service' => 'Service imaginaire']);
+
+        self::assertResponseRedirects('/');
+    }
+
+    public function testAccessJourney(): void
+    {
+        $crawler = $this->client->request('GET', '/acces', ['type' => 'q']);
+        self::assertResponseIsSuccessful();
+        $link = $crawler->filter('#access-list a.row')->first();
+        $name = trim($link->filter('strong')->text());
+
+        $crawler = $this->client->click($link->link());
+        self::assertSelectorTextContains('.picked b', $name);
+
+        $this->client->submit($crawler->selectButton('Envoyer la demande')->form(['justification' => 'Nouvelle mission']));
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.done p', 'Demander à accéder à '.$name);
+    }
+
+    public function testCatalogueFamilyAndLogicPages(): void
+    {
+        $this->client->request('GET', '/catalogue/resa');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h2', 'Réserver une salle');
+
+        $this->client->request('GET', '/catalogue/inconnue');
+        self::assertResponseStatusCodeSame(404);
+
+        $this->client->request('GET', '/comment-ca-marche');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('table', 'INCIDENT · Incidents/IT/Equipement de proximité/Impression/Imprimante');
+    }
+
+    public function testMyRequestsAndMessage(): void
+    {
+        $crawler = $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes', 'rfc' => 'S261103_000101']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('aside .eyebrow', 'S261103_000101');
+
+        $this->client->submit($crawler->selectButton('Envoyer le message')->form(['message' => 'Une précision']));
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.alert.success', 'transmis aux intervenants');
+    }
+
+    public function testColleagueSearch(): void
+    {
+        $this->client->request('GET', '/collegues', ['q' => 'durand']);
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('DURAND Claire', (string) $this->client->getResponse()->getContent());
+    }
+}

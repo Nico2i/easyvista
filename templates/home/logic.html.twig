@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+{% set nav = 'logique' %}
+{% block title %}Comment ça marche · {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="prose">
+    <div class="eyebrow">Vue DSN</div>
+    <h2 style="font-size:28px;margin:4px 0 14px">Comment Calipso oriente les agents</h2>
+    <p>L'agent décrit sa situation. Trois mécanismes décident du formulaire proposé, sans jamais lui demander de choisir entre incident et demande&nbsp;:</p>
+    <p><b>1. Le dictionnaire de besoins.</b> {{ besoinsCount }} groupes de formulations courantes («&nbsp;imprimante&nbsp;», «&nbsp;stagiaire&nbsp;», «&nbsp;mail suspect&nbsp;»…) pointent vers des sujets d'incident et des services précis. C'est la pièce à enrichir avec les intitulés de vos tickets réels (fichier <code>config/calipso/besoins.yaml</code>).</p>
+    <p><b>2. Le ton de la phrase.</b> «&nbsp;ne marche plus&nbsp;», «&nbsp;bloqué&nbsp;», «&nbsp;erreur&nbsp;» mettent les problèmes en tête&nbsp;; «&nbsp;besoin&nbsp;», «&nbsp;nouveau&nbsp;», «&nbsp;réserver&nbsp;» mettent les demandes en tête. Si la phrase est ambiguë, une question simple est posée.</p>
+    <p><b>3. Les libellés du catalogue.</b> Le nom d'une application (GECO, ASTRE RH, Teams…) fait remonter à la fois «&nbsp;ça ne fonctionne pas&nbsp;» et «&nbsp;obtenir un accès&nbsp;».</p>
+</div>
+<div class="bigstats" style="margin:20px 0">
+    <div><b>{{ incidentsCount }}</b><small>sujets d'incident</small></div>
+    <div><b>{{ servicesCount }}</b><small>services hors accès</small></div>
+    <div><b>{{ accessEntries|number_format(0, ',', ' ') }}</b><small>entrées d'accès regroupées</small></div>
+    <div><b>{{ accessCount }}</b><small>ressources dans un seul parcours</small></div>
+</div>
+<h3 style="margin:24px 0 10px">Test sur des phrases d'agents</h3>
+<div class="tablewrap"><table>
+    <thead><tr><th>Ce que tape l'agent</th><th>Lecture</th><th>Premier résultat proposé</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+        <tr><td><a href="{{ path('app_home', {q: r.phrase}) }}">{{ r.phrase }}</a></td><td>{{ r.lecture }}</td><td style="font-family:var(--f-mono);font-size:12.5px">{{ r.premier.kind }} · {{ r.premier.label }}</td></tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+<p class="help">Cochez «&nbsp;Vue DSN&nbsp;» en haut pour voir, sur chaque résultat et chaque formulaire, ce qui sera créé dans EasyVista. Les phrases de test se modifient dans <code>config/calipso/besoins.yaml</code>.</p>
+{% endblock %}

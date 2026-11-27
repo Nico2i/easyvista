@@ -1,0 +1,244 @@
+# Dictionnaire de besoins : formulations des agents -> sujets d'incident (i:), services (s:),
+# rubriques du catalogue (f:) et types d'accès (a:).
+# C'est la partie à enrichir en priorité avec les intitulés de vos tickets réels.
+#  - mots : débuts de mots recherchés dans la phrase (sans accents, en minuscules)
+#  - cibles : par ordre de pertinence (la première est la mieux classée)
+#  - bonus : optionnel, renforce le groupe (ex. cybersécurité)
+# Après modification : php bin/console cache:clear
+parameters:
+    calipso.besoins:
+        - mots: ["imprim", "impression", "photocop", "copieur", "multifonction", "bourrage"]
+          cibles:
+              - "i:Imprimante"
+              - "i:Multifonction"
+              - "s:Demander l'accès à un nouveau point d'impression"
+              - "s:Commander des consommables pour imprimante"
+              - "s:Demander une imprimante"
+        - mots: ["toner", "cartouche", "encre", "consommable"]
+          cibles:
+              - "s:Commander des consommables pour imprimante"
+              - "i:Imprimante"
+        - mots: ["mot de passe", "mdp", "password", "identifiant", "verrouill", "compte bloque", "session", "login"]
+          bonus: 5
+          cibles:
+              - "i:Accès système par login et password"
+              - "i:Accès bureautique"
+              - "i:Accès applicatifs"
+        - mots: ["ordinateur", "ordi", "pc", "laptop", "unite centrale", "demarre", "s allume", "ecran noir", "ecran bleu", "lent", "rame", "mise a jour windows"]
+          cibles:
+              - "i:Ordinateur"
+              - "i:PC portable"
+              - "i:WINDOWS"
+              - "s:Demander un ordinateur portable standard"
+              - "s:Demander un ordinateur fixe complet"
+              - "s:Emprunter un portable intégré au domaine"
+        - mots: ["portable"]
+          cibles:
+              - "i:PC portable"
+              - "i:Smartphone"
+              - "s:Demander un ordinateur portable standard"
+              - "s:Demander un smartphone"
+        - mots: ["ecran", "moniteur", "deuxieme ecran", "second ecran", "double ecran"]
+          cibles:
+              - "i:Ecran"
+              - "s:Demander un écran d'ordinateur"
+        - mots: ["souris", "clavier", "station d accueil", "dock"]
+          cibles:
+              - "s:Demander une souris standard"
+              - "s:Demander un clavier standard"
+              - "i:Périphérique"
+              - "i:Station d'accueil"
+        - mots: ["telephone fixe", "poste fixe", "combine", "ligne", "tonalite", "sonne", "appel", "telephone"]
+          cibles:
+              - "i:Téléphone IP"
+              - "i:Ligne téléphonique"
+              - "s:Demander un téléphone fixe"
+              - "s:Demander un transfert d'appels vers DIS"
+        - mots: ["smartphone", "mobile", "iphone", "android", "sim", "forfait"]
+          cibles:
+              - "i:Smartphone"
+              - "i:Téléphone mobile"
+              - "i:SIM"
+              - "s:Demander un smartphone"
+              - "s:Demander un chargeur de téléphone sur secteur"
+        - mots: ["mail", "messagerie", "outlook", "courriel", "boite mail", "boite aux lettres", "email"]
+          cibles:
+              - "i:OUTLOOK"
+              - "i:OUTLOOK WEB APP"
+              - "a:bal"
+              - "s:Demander la création d'une boite aux lettres fonctionnelle"
+        - mots: ["boite partagee", "boite fonctionnelle", "bal", "adresse generique", "boite commune"]
+          cibles:
+              - "a:bal"
+              - "s:Demander la création d'une boite aux lettres fonctionnelle"
+        - mots: ["dossier", "partage", "repertoire", "lecteur reseau", "lecteur q", "fichiers communs", "espace commun", "espace projet"]
+          cibles:
+              - "a:q"
+              - "a:proj"
+        - mots: ["supprime", "efface", "perdu", "restaur", "ecrase", "ancienne version", "corbeille"]
+          cibles:
+              - "s:Demander la restauration d'un élément supprimé ou détérioré"
+        - mots: ["teams", "visio", "zoom", "reunion en ligne", "webinaire", "pexip", "audioconference", "conference"]
+          cibles:
+              - "i:TEAMS"
+              - "i:VISIO CONFERENCE"
+              - "s:Réserver une salle d'audioconférence"
+              - "s:Demander un casque audio pour ordinateur"
+        - mots: ["casque", "micro", "webcam", "camera", "haut parleur", "entend", "son "]
+          cibles:
+              - "s:Demander un casque audio pour ordinateur"
+              - "s:Demander un microphone pour ordinateur"
+              - "i:WebCam"
+        - mots: ["wifi", "internet", "reseau", "connexion", "deconnect", "pas de reseau", "navigateur"]
+          cibles:
+              - "i:Accès internet"
+              - "i:Borne WIFI"
+              - "i:LAN"
+        - mots: ["teletravail", "vpn", "a distance", "maison", "domicile", "ivanti", "pulse"]
+          cibles:
+              - "i:Accès télétravail"
+              - "i:IVANTI Secure Access Client"
+              - "i:VPN SSL"
+              - "s:Emprunter un portable intégré au domaine"
+        - mots: ["site bloque", "site web", "debloquer", "bloque par", "site interdit"]
+          cibles:
+              - "s:Demander le déblocage d'un site web"
+              - "i:Accès internet"
+        - mots: ["salle", "reunion", "reserver", "reservation", "bureau d entretien", "seminaire"]
+          cibles:
+              - "f:resa"
+              - "s:Planifier une réunion au siège"
+              - "s:Modifier une réservation"
+              - "s:Annuler une réservation"
+        - mots: ["voiture", "vehicule", "deplacement", "engin"]
+          cibles:
+              - "f:resa"
+              - "s:Proposer la réaffectation d'un véhicule ou d'un engin"
+        - mots: ["accident", "sinistre", "accroch", "rayure", "choc", "bris de glace", "degat"]
+          cibles:
+              - "s:Déclarer un sinistre VAM (véhicule du département)"
+              - "s:Déclarer un sinistre VAM (véhicule collaborateur)"
+              - "s:Déclarer un sinistre RC"
+        - mots: ["arrive", "arrivee", "nouvel agent", "nouveau collegue", "nouvelle collegue", "stagiaire", "recrue", "embauche", "prise de poste", "apprenti", "interim", "nouvel arrivant"]
+          cibles:
+              - "s:Déclarer l'arrivée d'un agent"
+              - "s:Demander l'ouverture d'un compte informatique externe"
+              - "s:Demander un ordinateur portable standard"
+        - mots: ["depart", "quitte", "mutation", "fin de contrat"]
+          cibles:
+              - "s:Déclarer le départ d'un agent"
+              - "s:Demander la fermeture d'un compte informatique externe"
+        - mots: ["chef de service", "nouveau chef", "directeur", "directrice", "responsable change"]
+          cibles:
+              - "s:Déclarer le changement d'un.e chef.fe de service ou directeur.trice"
+        - mots: ["retraite", "pension", "carriere", "anciennete"]
+          cibles:
+              - "s:Demander une simulation retraite"
+              - "s:Demander une mise à jour de carrière"
+        - mots: ["prestataire", "partenaire", "consultant", "compte externe", "externe", "intervenant exterieur"]
+          cibles:
+              - "s:Demander l'ouverture d'un compte informatique externe"
+              - "i:Accès distant partenaire ou prestataire"
+              - "s:Demander à pouvoir téléintervenir sur le SI"
+        - mots: ["logiciel", "installer", "installation", "licence", "nouvelle version"]
+          cibles:
+              - "f:log"
+              - "s:Demander le référencement d'un nouveau logiciel ou d'une nouvelle version"
+        - mots: ["pdf", "acrobat"]
+          cibles:
+              - "s:Installer PDF-XCHANGE"
+              - "i:ACROBAT READER"
+              - "i:PDF-XCHANGE"
+        - mots: ["virus", "phishing", "hameconnage", "mail suspect", "pirat", "arnaque", "rancon", "lien suspect", "piece jointe suspecte", "fraude", "cyber"]
+          bonus: 10
+          cibles:
+              - "i:Cybersécurité"
+        - mots: ["absence", "conges", "vacances", "absent", "message d absence"]
+          cibles:
+              - "s:Activer Désactiver le gestionnaire d'absence CALIPSO"
+        - mots: ["cle usb", "clef usb", "carte sd", "stockage", "disque dur"]
+          cibles:
+              - "s:Demander une Clef USB"
+              - "s:Demander une carte SD"
+              - "i:Clef USB"
+              - "i:Disque dur portable"
+        - mots: ["badge", "porte", "locaux", "entrer dans le batiment"]
+          cibles:
+              - "i:Accès aux locaux"
+        - mots: ["certificat", "signature electronique", "parapheur", "signer"]
+          cibles:
+              - "s:Demander un certificat de signature"
+              - "i:I-PARAPHEUR"
+        - mots: ["enveloppe", "courrier", "affranchi", "papier", "envoi en nombre"]
+          cibles:
+              - "f:four"
+              - "s:Demander une assistance logistique pour un envoi de courrier en nombre"
+        - mots: ["reception", "cafe", "buffet", "pot de depart", "traiteur", "boisson"]
+          cibles:
+              - "s:Organiser une réception"
+              - "s:Annuler une réception"
+        - mots: ["photo", "trombinoscope"]
+          cibles:
+              - "s:Modifier ou supprimer ma photo"
+        - mots: ["scanner", "numeris", "scan"]
+          cibles:
+              - "i:Scanner"
+              - "s:Demander un scanner"
+        - mots: ["proche", "contact d urgence", "personne a prevenir"]
+          cibles:
+              - "s:Donner les coordonnées d’un proche en cas d’urgence"
+        - mots: ["rgpd", "donnees personnelles", "cnil", "informatique et libertes"]
+          cibles:
+              - "s:Demander un conseil Informatique et Libertés"
+              - "s:Demander un audit de conformité Informatique et Libertés"
+        - mots: ["idee", "amelior", "suggest"]
+          cibles:
+              - "s:Suggérer une amélioration"
+        - mots: ["firewall", "pare feu", "ouverture de flux", "ouvrir un port"]
+          cibles:
+              - "s:Demander une dérogation Firewall"
+        - mots: ["projet", "etude", "nouveau besoin", "application metier", "dematerialis"]
+          cibles:
+              - "s:Soumettre un projet"
+              - "s:Demander une étude d'opportunité MAREVA"
+        - mots: ["tablette", "ipad"]
+          cibles:
+              - "s:Demander une tablette tactile"
+              - "i:Tablette"
+        - mots: ["sacoche", "sac a dos", "valise", "antivol"]
+          cibles:
+              - "s:Demander une sacoche pour PC portable"
+              - "s:Demander un sac à dos pour PC portable"
+              - "s:Demander un câble antivol pour PC portable"
+        - mots: ["medaille"]
+          cibles:
+              - "s:Demander la médaille d'honneur départementale"
+
+    # Expressions qui font pencher vers « ça ne fonctionne plus » (expression régulière, texte sans accents)
+    calipso.ton_probleme: "(marche|fonctionne|repond|demarre|allume|imprime|charge|ouvre|affiche|synchronise|connecte)\\w* (plus|pas)|\\bne \\w+ (plus|pas)\\b|\\bn \\w+ (plus|pas)\\b|bloque|bug|plante|panne|erreur|\\blent|\\brame|impossible|n arrive|cass|souci|probleme|coupe|gele|freeze|crash|\\bhs\\b|virus|oubli|suspect|en rade|ecran noir|ecran bleu|noir|s eteint|perdu|plus acces|pas acces|disparu|ne s affiche"
+    # Expressions qui font pencher vers « nouveau besoin »
+    calipso.ton_besoin: "besoin|voudrais|souhait|aimerais|il me faut|faut |commander|obtenir|nouveau|nouvelle|installer|reserver|demander|acces a|acceder|arrive|creer|ajouter|avoir un|avoir une|emprunter|organiser|declarer|ouvrir"
+    # Mots ignorés lors de la recherche dans les libellés du catalogue
+    calipso.mots_vides: "le la les un une des de du d l a au aux et ou en mon ma mes me je j il elle on nous vous pour sur dans avec pas plus ne n que qui quoi est sont ai suis fait faire avoir besoin voudrais souhaite aimerais faut commander obtenir demander nouveau nouvelle nouvel marche fonctionne bloque bug plante panne erreur impossible probleme souci arrive lundi mardi mercredi jeudi vendredi demain service collegue ca cela ce cet cette se s y quand depuis matin soir tres trop bien mal"
+    # Mots trop génériques pour départager des libellés
+    calipso.mots_generiques: ["acces", "acceder", "dossier", "partage", "boite", "espace", "application", "appli", "logiciel"]
+    # Exemples proposés sous la barre de recherche
+    calipso.exemples:
+        - "Mon imprimante n'imprime plus"
+        - "Un stagiaire arrive lundi"
+        - "Accéder au dossier partagé de mon service"
+        - "Je ne peux plus me connecter en télétravail"
+        - "Réserver une salle de réunion"
+        - "J'ai reçu un mail suspect"
+    # Phrases de test affichées sur la page « Comment ça marche »
+    calipso.phrases_test:
+        - "Mon imprimante n'imprime plus"
+        - "J'ai besoin d'une imprimante"
+        - "Un stagiaire arrive lundi"
+        - "Je n'ai plus accès à GECO"
+        - "Accès au dossier Q: DRHQVT"
+        - "Excel plante à l'ouverture"
+        - "Mon écran reste noir"
+        - "Réserver la Clio"
+        - "J'ai reçu un mail suspect"
+        - "Mot de passe oublié"
