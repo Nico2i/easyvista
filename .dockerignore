@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vscode
+vendor
+var
+docs
+tests
+.phpunit.cache
+phpunit.xml
+.env.local
+.env.*.local
+.env.local.php
+compose*.yaml
+Dockerfile

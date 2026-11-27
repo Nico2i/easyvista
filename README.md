@@ -11,6 +11,31 @@ Application Symfony 7.4 (PHP ≥ 8.2), construite à partir de la maquette valid
 
 Le mode démonstration (`EASYVISTA_MODE=mock`, valeur par défaut) n'appelle jamais EasyVista : les demandes créées sont stockées dans `var/mock/tickets.json`.
 
+### Avec Docker (PHP 8.4 + Apache)
+
+```powershell
+docker compose up -d --build
+```
+
+Ouvrir http://localhost:8000. Le premier démarrage installe les dépendances Composer (une à deux minutes) ; `docker compose logs -f` permet de suivre l'avancement.
+Pour un autre port : `$env:CALIPSO_PORT=8080` avant la commande.
+
+Les sources sont montées dans le conteneur : une modification est visible immédiatement. Les fichiers `.env.local` du projet sont lus normalement.
+
+```powershell
+docker compose exec app php bin/phpunit
+```
+
+```powershell
+docker compose exec app php bin/console calipso:easyvista:check votre.login
+```
+
+```powershell
+docker compose down
+```
+
+### Sans Docker
+
 Prérequis : PHP 8.2+ (extensions `ctype`, `iconv`, `mbstring`, `json`; `intl` conseillée), [Composer](https://getcomposer.org).
 
 ```powershell
@@ -113,6 +138,22 @@ php bin/console cache:clear --env=prod
 
 La racine web est le dossier `public/`. Le dossier `var/` doit être accessible en écriture.
 
+### Image Docker de production
+
+La cible `prod` du `Dockerfile` produit une image autonome (sans outils de développement, OPcache avec préchargement) :
+
+```powershell
+docker build --target prod -t calipso:prod .
+```
+
+```powershell
+docker run -d -p 8080:80 --env-file calipso.env calipso:prod
+```
+
+`calipso.env` (non versionné) contient `APP_SECRET`, `EASYVISTA_MODE=api`, `EASYVISTA_BASE_URI`, le jeton ou le compte, et `CALIPSO_SSO_SERVER_VAR`. Les variables `APP_*`, `EASYVISTA_*` et `CALIPSO_*` du conteneur sont transmises à PHP par `docker/entrypoint.sh`.
+
+L'authentification Windows (Kerberos) n'est pas configurée dans l'image : placer devant le conteneur un serveur qui authentifie l'agent (IIS, Apache, reverse proxy de l'entreprise) et transmet le login dans l'en-tête `X-Remote-User`, puis régler `CALIPSO_SSO_SERVER_VAR=HTTP_X_REMOTE_USER`. Dans ce cas, le conteneur ne doit être joignable que par ce serveur, sinon l'en-tête pourrait être forgé.
+
 ---
 
 ## 4. Faire vivre le portail
@@ -155,6 +196,7 @@ src/Command/             import du catalogue, synchronisation des codes, vérifi
 templates/ public/       Interface (Twig, CSS et JavaScript sans dépendance)
 tests/                   Tests (dont la parité avec le moteur de la maquette)
 docs/                    Maquette d'origine et swagger EasyVista
+Dockerfile, compose.yaml PHP 8.4 + Apache (cibles dev et prod), réglages dans docker/
 ```
 
 Le moteur d'orientation est un portage fidèle de celui de la maquette : `tests/Fixtures/orientation-reference.json` contient les résultats du moteur JavaScript d'origine et `tests/Orientation/OrienterTest.php` vérifie que la version PHP donne exactement les mêmes.

@@ -1,0 +1,24 @@
+# Calipso en local : docker compose up --build  puis http://localhost:8000
+#
+# Les variables d'environnement viennent des fichiers .env / .env.dev / .env.local du projet
+# (lus par Symfony). Pour brancher EasyVista, créer .env.local (voir README).
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    image: calipso:dev
+    ports:
+      - "${CALIPSO_PORT:-8000}:80"
+    volumes:
+      - .:/app
+      # vendor/ et var/ restent dans des volumes Docker : beaucoup plus rapide sous Windows et macOS
+      - vendor:/app/vendor
+      - var:/app/var
+    environment:
+      APP_ENV: dev
+    restart: unless-stopped
+
+volumes:
+  vendor:
+  var:

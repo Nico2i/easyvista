@@ -22,6 +22,8 @@ final class PortalUser implements UserInterface
         return ['ROLE_USER'];
     }
 
+    /** Aucun secret n'est conservé : méthode vide, à supprimer avec Symfony 8. */
+    #[\Deprecated]
     public function eraseCredentials(): void
     {
     }

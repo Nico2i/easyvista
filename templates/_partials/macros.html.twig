@@ -67,9 +67,9 @@
     <div class="field"><label for="pj">Capture d'écran ou document <span class="help">(facultatif, {{ maxFileMb }} Mo maximum)</span></label><input id="pj" name="piece_jointe" type="file"></div>
 {% endmacro %}
 
-{% macro hotline(portail, title) %}
+{% macro hotline(portail, title = 'Hotline DSN') %}
     <div class="panel hotline">
-        <div class="eyebrow">{{ title|default('Hotline DSN') }}</div>
+        <div class="eyebrow">{{ title }}</div>
         <div class="num">{{ portail.hotline_numero }}</div>
         <p>{{ portail.hotline_horaires }}</p>
     </div>
