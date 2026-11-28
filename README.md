@@ -81,7 +81,7 @@ php bin/console calipso:easyvista:check votre.login
 ```
 
 La commande affiche :
-- les **droits du compte API** endpoint par endpoint (`GET /employees`, `/requests`, `/catalog-requests`, `/urgency`, `/version`). Un profil EasyVista peut autoriser certains endpoints et en refuser d'autres : ils répondent alors « 403 Unauthorized method for your profile ». Seul `GET /employees` est indispensable pour ouvrir le portail ; `/version` est purement informatif ;
+- les **droits du compte API** endpoint par endpoint (`GET /employees`, `/requests`, `/catalog-requests`, `/urgencies`). Un profil EasyVista peut autoriser certains endpoints et en refuser d'autres : ils répondent alors « 403 Unauthorized method for your profile ». Seul `GET /employees` est indispensable pour ouvrir le portail ;
 - l'agent trouvé, ses dernières demandes et les codes catalogue retrouvés pour quelques services.
 
 Les endpoints d'écriture (`POST /requests`, `/documents`, `/actions`) ne sont pas testés, pour ne rien créer : vérifiez avec l'administrateur EasyVista que le profil du compte API les autorise. Le détail des erreurs HTTP est dans `var/log/dev.log`.
@@ -105,7 +105,7 @@ Tous réglables dans **`config/calipso/easyvista.yaml`** (repérés « À VÉRIF
 |---|---|---|
 | `code_incident_defaut` / `EASYVISTA_DEFAULT_INCIDENT_CODE` | Code du « Sujet par défaut » (signalement sans sujet) | recherche par chemin `Incidents/IT/Sujet par défaut` |
 | `code_demande_generique` / `EASYVISTA_GENERIC_REQUEST_CODE` | Code de la « Demande générique » | recherche par intitulé |
-| `urgences` | Gêne exprimée → `Urgency_ID` (voir `GET /urgency`) | 1 / 2 / 3 |
+| `urgences` | Gêne exprimée → `Urgency_ID` (voir `GET /urgencies`) | 1 / 2 / 3 |
 | `envoyer_demandeur` | Envoie `Requestor_Mail` / `Requestor_Name` pour que l'agent (et non le compte API) soit demandeur | `true` |
 | `recherche_mes_demandes` | Filtre `search` de « Mes demandes » | `requestor.e_mail:"{email}"` |
 | `type_action_message` / `EASYVISTA_MESSAGE_ACTION_TYPE_ID` | Type d'action pour « Écrire aux intervenants » (vide = bouton masqué) | vide |

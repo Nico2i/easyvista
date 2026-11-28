@@ -46,8 +46,8 @@ class HttpEasyVistaClient implements EasyVistaClientInterface
             ['GET /employees', 'Identification des agents, recherche de collègues', 'employees', ['max_rows' => 1, 'fields' => 'employee_id']],
             ['GET /requests', 'Mes demandes', 'requests', ['max_rows' => 1, 'fields' => 'rfc_number']],
             ['GET /catalog-requests', 'Codes catalogue', 'catalog-requests', ['max_rows' => 1, 'fields' => 'code,title_'.$lang]],
-            ['GET /urgency', 'Liste des urgences (réglage « urgences »)', 'urgency', []],
-            ['GET /version', 'Facultatif (information)', 'version', []],
+            // Le swagger indique /urgency, mais l'instance expose /urgencies ; /version n'existe pas.
+            ['GET /urgencies', 'Liste des urgences (réglage « urgences »)', 'urgencies', []],
         ];
 
         $results = [];

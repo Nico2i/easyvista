@@ -88,18 +88,20 @@ final class HttpEasyVistaClientTest extends TestCase
     public function testCheckAccessReportsForbiddenEndpointsWithoutFailing(): void
     {
         $http = new MockHttpClient(static function (string $method, string $url) {
-            return str_contains($url, '/version')
+            return str_contains($url, '/catalog-requests')
                 ? new MockResponse('{"error":"Unauthorized method for your profile"}', ['http_code' => 403])
                 : new JsonMockResponse(['total_record_count' => '12', 'records' => []]);
         }, 'https://ev.example/api/v1/50004/');
 
         $access = array_column((new HttpEasyVistaClient($http, self::OPTIONS, new NullLogger()))->checkAccess(), null, 'endpoint');
 
+        self::assertSame(['GET /employees', 'GET /requests', 'GET /catalog-requests', 'GET /urgencies'], array_keys($access));
         self::assertTrue($access['GET /employees']['ok']);
         self::assertSame('12 enregistrement(s)', $access['GET /employees']['detail']);
-        self::assertFalse($access['GET /version']['ok']);
-        self::assertStringContainsString('profil du compte API n\'autorise pas GET /version', $access['GET /version']['detail']);
-        self::assertStringContainsString('Unauthorized method for your profile', $access['GET /version']['detail']);
+        self::assertTrue($access['GET /urgencies']['ok']);
+        self::assertFalse($access['GET /catalog-requests']['ok']);
+        self::assertStringContainsString('profil du compte API n\'autorise pas GET /catalog-requests', $access['GET /catalog-requests']['detail']);
+        self::assertStringContainsString('Unauthorized method for your profile', $access['GET /catalog-requests']['detail']);
     }
 
     public function testFindCatalogCodeMatchesTitle(): void

@@ -12,7 +12,7 @@ parameters:
         # Préfixe du chemin des sujets d'incident dans le catalogue
         prefixe_incidents: "Incidents/IT"
 
-        # Gêne exprimée par l'agent -> Urgency_ID EasyVista (voir GET /urgency). À VÉRIFIER
+        # Gêne exprimée par l'agent -> Urgency_ID EasyVista (voir GET /urgencies). À VÉRIFIER
         urgences:
             bloquant: 1
             gene: 2
