@@ -124,6 +124,54 @@ final class HttpEasyVistaClientTest extends TestCase
         self::assertSame([['search' => 'login:"jdupont"', 'count' => 0], ['search' => 'identification:"jdupont"', 'count' => 1]], $client->lastEmployeeSearches());
     }
 
+    public function testTicketDetailAndTimelineFollowLinks(): void
+    {
+        $base = 'https://ev.example/api/v1/50004/';
+        $calls = [];
+        $http = new MockHttpClient(static function (string $method, string $url) use (&$calls, $base) {
+            $calls[] = urldecode($url);
+            $path = substr(parse_url($url, \PHP_URL_PATH), \strlen('/api/v1/50004/'));
+
+            return match (true) {
+                'requests/I261127_000101' === $path => new JsonMockResponse([
+                    'RFC_NUMBER' => 'I261127_000101', 'REQUEST_ID' => '987', 'SUBMIT_DATE_UT' => '2026-11-27T07:55:00.000Z',
+                    'SD_CATALOG_PATH' => 'Incidents/IT/Equipement de proximité/Impression/Imprimante',
+                    'STATUS' => ['STATUS_FR' => 'En cours'],
+                    'DESCRIPTION' => ['HREF' => $base.'requests/I261127_000101/description'],
+                    'RECIPIENT' => ['HREF' => $base.'employees/1001', 'LAST_NAME' => 'MARTIN Camille', 'E_MAIL' => 'camille@example.org'],
+                    'REQUESTOR' => ['HREF' => $base.'employees/1001', 'LAST_NAME' => 'MARTIN Camille', 'E_MAIL' => 'camille@example.org'],
+                    'LOCATION' => ['LOCATION_PATH' => 'Saint-Brieuc/Siège'],
+                ]),
+                'requests/I261127_000101/description' === $path => new JsonMockResponse(['HREF' => 'x', 'DESCRIPTION' => '<p>Bourrage&nbsp;permanent</p><p>2e étage</p>']),
+                'actions' === $path => new JsonMockResponse(['records' => [
+                    ['ACTION_ID' => '2', 'ACTION_LABEL_FR' => 'Intervention', 'ACTION_TYPE' => ['NAME_FR' => 'Intervention'], 'START_DATE_UT' => '2026-11-27T10:00:00.000Z', 'DONE_BY' => ['LAST_NAME' => 'TANGUY Loïc', 'EMPLOYEE_ID' => '1003'], 'COMMENT' => ['HREF' => $base.'actions/2/comment']],
+                    ['ACTION_ID' => '1', 'ACTION_LABEL_FR' => 'Prise en compte', 'ACTION_TYPE' => ['NAME_FR' => 'Prise en compte'], 'START_DATE_UT' => '2026-11-27T08:00:00.000Z', 'END_DATE_UT' => '2026-11-27T08:00:00.000Z'],
+                ]]),
+                'actions/2/comment' === $path => new JsonMockResponse(['HREF' => 'x', 'PARENT_HREF' => 'y', 'COMMENT' => 'Je passe à 11h<br>Merci']),
+                default => new MockResponse('', ['http_code' => 404]),
+            };
+        }, $base);
+
+        $client = new HttpEasyVistaClient($http, self::OPTIONS + ['recherche_actions' => 'request_id:{request_id}', 'champs_actions' => ''], new NullLogger());
+        $detail = $client->getTicketDetail('I261127_000101');
+
+        self::assertNotNull($detail);
+        self::assertSame("Bourrage permanent\n2e étage", $detail->description);
+        self::assertSame('1001', $detail->requestor?->id);
+        self::assertTrue($detail->concerns(new Employee('1001', 'x', 'X')));
+        self::assertFalse($detail->concerns(new Employee('9', 'y', 'Y', 'autre@example.org')));
+        self::assertSame('Saint-Brieuc/Siège', $detail->locationPath);
+
+        $events = $client->listTicketEvents($detail);
+        $actionsCall = (string) current(array_filter($calls, static fn (string $c) => str_contains($c, '/actions?')));
+        self::assertStringContainsString('search=request_id:987', $actionsCall);
+        self::assertStringContainsString('sort=start_date_ut', $actionsCall);
+        self::assertSame(['1', '2'], array_map(static fn ($e) => $e->id, $events), 'triés par date');
+        self::assertSame("Je passe à 11h\nMerci", $events[1]->comment);
+        self::assertTrue($events[1]->isOpen());
+        self::assertSame('TANGUY Loïc', $events[1]->authorName);
+    }
+
     public function testFindCatalogCodeMatchesTitle(): void
     {
         $http = new MockHttpClient(new JsonMockResponse(['records' => [

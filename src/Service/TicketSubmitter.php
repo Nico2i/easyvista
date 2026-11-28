@@ -139,6 +139,17 @@ class TicketSubmitter
         return $this->send($ticket, $title, '', null);
     }
 
+    /**
+     * Ajoute une pièce jointe à une demande existante (panneau de détail).
+     *
+     * @throws EasyVistaException|\InvalidArgumentException
+     */
+    public function attachToTicket(string $number, UploadedFile $file): void
+    {
+        $this->checkFile($file);
+        $this->easyVista->attachDocument($number, $file->getClientOriginalName(), (string) file_get_contents($file->getPathname()));
+    }
+
     public function maxFileSize(): int
     {
         return (int) ($this->portal['pj_max_mo'] ?? 5) * 1024 * 1024;

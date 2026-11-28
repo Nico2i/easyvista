@@ -32,6 +32,24 @@ parameters:
         recherche_mes_demandes: 'requestor.e_mail:"{email}"'
         nb_max_mes_demandes: 100
 
+        # Historique du panneau de détail (GET /actions)
+        # Filtre des actions d'une demande. Variables : {request_id}, {rfc}. À VÉRIFIER
+        recherche_actions: 'request_id:{request_id}'
+        # Champs demandés (vide = champs par défaut d'EasyVista ; en cas de refus, nouvel essai sans)
+        champs_actions: 'action_id,action_label_fr,action_type.name_fr,creation_date_ut,start_date_ut,end_date_ut,done_by.last_name,done_by.employee_id,comment,resolution'
+        # Type ou libellé d'action -> catégorie affichée (icône, couleur). Expressions régulières sans accents,
+        # testées dans l'ordre ; tout le reste est une « intervention ».
+        types_actions:
+            validation: "valid|approb"
+            resolution: "resol|solution"
+            cloture: "clotur|ferme|livr"
+            affectation: "affect|transf|escalad"
+            prise_en_compte: "prise en (compte|charge)|qualif|enregistr|ouverture"
+            message: "comment|message|echange|information|relance|reponse|mail"
+
+        # Lien « Ouvrir dans EasyVista » du panneau ({rfc} = numéro). Vide = bouton masqué.
+        lien_ticket: "%env(default::EASYVISTA_TICKET_URL)%"
+
         # Type d'action EasyVista utilisé pour « Écrire aux intervenants » (POST /requests/{rfc}/actions).
         # Vide = fonction masquée. À VÉRIFIER
         type_action_message: "%env(default::EASYVISTA_MESSAGE_ACTION_TYPE_ID)%"

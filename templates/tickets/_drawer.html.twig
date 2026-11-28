@@ -1,0 +1,121 @@
+{# Contenu du panneau de détail d'une demande (d = contexte préparé par TicketController / TicketView) #}
+{% set pills = {wait: 'En attente de validation', run: 'En cours de traitement', ok: 'Terminée'} %}
+{% set listUrl = path('app_my_requests', {statut: filter}) %}
+
+{% if d is null %}
+    <div class="dr-head">
+        <div class="dr-top"><span class="num">{{ number }}</span><span class="sp"></span>
+            <a class="icon-btn" href="{{ listUrl }}" data-drawer-close title="Fermer (Échap)" aria-label="Fermer">{{ icon('close') }}</a></div>
+        <h2 id="dr-title">Détail indisponible</h2>
+    </div>
+    <div class="dr-body single"><div class="alert error" role="alert">{{ drawerError ?: 'Cette demande n\'a pas pu être chargée.' }}</div></div>
+{% else %}
+{% set t = d.t %}
+{% set detail = d.detail %}
+<div class="dr-head">
+    <div class="dr-top">
+        <span class="kind {{ t.isIncident ? 'p' : 'd' }}">{{ t.isIncident ? 'Problème signalé' : 'Demande de service' }}</span>
+        <span class="num">{{ t.number }}</span>
+        <span class="pill {{ t.status }}">{{ t.statusLabel ?: pills[t.status] }}</span>
+        <span class="sp"></span>
+        <button class="icon-btn" type="button" data-copy-link="{{ url('app_ticket_show', {number: t.number}) }}" title="Copier le lien de cette demande" aria-label="Copier le lien">{{ icon('link') }}</button>
+        {% if d.easyvistaUrl %}<a class="icon-btn" href="{{ d.easyvistaUrl }}" target="_blank" rel="noopener" title="Ouvrir dans EasyVista" aria-label="Ouvrir dans EasyVista">{{ icon('ext') }}</a>{% endif %}
+        <a class="icon-btn" href="{{ listUrl }}" data-drawer-close title="Fermer (Échap)" aria-label="Fermer">{{ icon('close') }}</a>
+    </div>
+    <h2 id="dr-title">{{ t.label }}</h2>
+    <ol class="track">{% for s in d.steps %}<li class="{{ s.state }}"><b>{{ s.label }}</b>{{ s.detail }}</li>{% endfor %}</ol>
+    <div class="src">GET /requests/{{ t.number }} · STATUS, SUBMIT_DATE_UT, MAX_RESOLUTION_DATE_UT, END_DATE_UT</div>
+</div>
+
+<div class="dr-body">
+    <div class="col">
+        {% for type, messages in app.flashes %}{% for message in messages %}<div class="alert {{ type }}" role="status">{{ message }}</div>{% endfor %}{% endfor %}
+
+        {% if d.callout %}
+            <div class="callout {{ d.callout.type }}"><span>{{ icon(d.callout.type == 'wait' ? 'clock' : 'check') }}</span>
+                <span><b>{{ d.callout.title }}</b>{{ d.callout.text }}</span></div>
+        {% endif %}
+
+        <section class="card"><h3>Description</h3>
+            <div class="src">GET /requests/{{ t.number }} → DESCRIPTION</div>
+            {% if detail.description %}<p class="desc">{{ detail.description }}</p>{% else %}<p class="help" style="margin:0">Aucune description.</p>{% endif %}
+        </section>
+
+        <section class="card"><h3>Détails</h3>
+            <div class="src">GET /requests/{{ t.number }} → RECIPIENT, REQUESTOR, SD_CATALOG_PATH, LOCATION, DEPARTMENT</div>
+            <dl class="facts">
+                <dt>Bénéficiaire</dt><dd>{{ detail.recipient.name ?? '—' }}</dd>
+                <dt>Demandeur</dt><dd>{{ detail.requestor.name ?? '—' }}</dd>
+                <dt>{{ t.isIncident ? 'Sujet' : 'Service' }}</dt><dd>{{ d.subject ?: '—' }}</dd>
+                <dt>Envoyée le</dt><dd>{{ t.submittedAt ? t.submittedAt|date('d/m/Y à H:i') : '—' }}</dd>
+                {% if t.closedAt %}
+                    <dt>{{ t.isIncident ? 'Clôturé le' : 'Terminée le' }}</dt><dd>{{ t.closedAt|date('d/m/Y à H:i') }}</dd>
+                {% elseif detail.dueAt %}
+                    <dt>Échéance prévue</dt><dd>{{ detail.dueAt|date('d/m/Y') }}</dd>
+                {% endif %}
+                {% if detail.locationPath %}<dt>Lieu</dt><dd>{{ detail.locationPath|replace({'/': ' › '}) }}</dd>{% endif %}
+                {% if detail.departmentPath %}<dt>Service de rattachement</dt><dd>{{ detail.departmentPath|replace({'/': ' › '}) }}</dd>{% endif %}
+                {% if detail.requestorPhone %}<dt>Téléphone</dt><dd>{{ detail.requestorPhone }}</dd>{% endif %}
+            </dl>
+            {% if t.catalogPath %}<div class="tag" style="margin-top:12px"><i class="{{ t.isIncident ? 'inc' : 'dem' }}">{{ t.isIncident ? 'INCIDENT' : 'DEMANDE' }}</i>{{ t.catalogPath }}</div>{% endif %}
+        </section>
+
+        <section class="card"><h3>Pièces jointes <small>{{ d.documents|length ?: 'aucune' }}</small></h3>
+            <div class="src">GET /requests/{{ t.number }}/documents</div>
+            {% if d.documentsError %}
+                <p class="help" style="margin:0">Liste indisponible : {{ d.documentsError }}</p>
+            {% elseif d.documents %}
+                <div class="files">{% for f in d.documents %}
+                    <a class="file" href="{{ path('app_ticket_document', {number: t.number, id: f.id}) }}"><span class="ext">{{ f.extension ?: 'fichier' }}</span>{{ f.filename }}</a>
+                {% endfor %}</div>
+            {% else %}
+                <p class="help" style="margin:0">Aucun fichier joint.</p>
+            {% endif %}
+            {% if t.isOpen %}
+                <form class="attach" method="post" action="{{ path('app_ticket_attach', {number: t.number}) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('attach' ~ t.number) }}">
+                    <input type="hidden" name="statut" value="{{ filter }}">
+                    <label class="btn" for="pj-{{ t.number }}">Ajouter un fichier</label>
+                    <input id="pj-{{ t.number }}" name="piece_jointe" type="file" class="visually-hidden" data-autosubmit-file required>
+                    <noscript><button class="btn">Envoyer</button></noscript>
+                    <span class="help">{{ portail.pj_max_mo }} Mo maximum</span>
+                </form>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="col">
+        <section class="card">
+            <h3>Historique <small>{{ d.timeline|filter(i => not i.future)|length }} étapes</small></h3>
+            <div class="src">GET /actions?search=request_id:{{ detail.requestId }}&amp;sort=start_date_ut → ACTION_TYPE, ACTION_LABEL, DONE_BY, START/END_DATE_UT, COMMENT</div>
+            {% if d.historyError %}<div class="alert info">Historique incomplet : {{ d.historyError }}</div>{% endif %}
+            <ol class="tl">
+                {% for i in d.timeline %}
+                    <li class="{{ i.future ? 'future' }} {{ i.now ? 'now' }} {{ i.mine ? 'mine' }}">
+                        <span class="dot {{ i.color }}">{{ icon(i.icon) }}</span>
+                        <div>
+                            <div class="ev-h"><b>{{ i.title }}</b>
+                                <time>{% if i.future %}à venir{% elseif i.now and i.at %}en cours depuis le {{ i.at|date('d/m à H:i') }}{% elseif i.at %}{{ i.at|date('d/m/Y à H:i') }}{% endif %}</time></div>
+                            {% if i.who %}<div class="who">{{ i.who }}</div>{% endif %}
+                            {% if i.message %}<div class="msg">{{ i.message }}</div>{% endif %}
+                            {% if i.type is defined and i.type %}<div class="tag">ACTION_TYPE = {{ i.type }}</div>{% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+            {% if d.canMessage %}
+                <form class="composer" method="post" action="{{ path('app_ticket_message', {number: t.number}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('message' ~ t.number) }}">
+                    <input type="hidden" name="statut" value="{{ filter }}">
+                    <label class="lbl" for="msg-{{ t.number }}"><b>Écrire aux intervenants</b></label>
+                    <textarea class="input" id="msg-{{ t.number }}" name="message" required placeholder="Une précision, une question…"></textarea>
+                    <div class="row-act"><span class="help">Votre message apparaîtra dans l'historique.</span><button class="btn primary">Envoyer</button></div>
+                    <div class="src">POST /requests/{{ t.number }}/actions</div>
+                </form>
+            {% elseif d.again %}
+                <div class="composer"><a class="btn" href="{{ path(d.again.route, d.again.params) }}">{{ d.again.label }}</a></div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endif %}

@@ -27,6 +27,16 @@ final class CalipsoExtension extends AbstractExtension implements GlobalsInterfa
         'cube' => '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
         'arrow' => '<path d="M9 6l6 6-6 6"/>',
         'check' => '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+        // Panneau de détail d'une demande
+        'send' => '<path d="M4 12l16-8-6 16-3-7z"/>',
+        'inbox' => '<path d="M4 13l3-8h10l3 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/>',
+        'users' => '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/>',
+        'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        'chat' => '<path d="M4 5h16v11H9l-5 4z"/>',
+        'flag' => '<path d="M5 21V4h11l-2 4 2 4H5"/>',
+        'close' => '<path d="M6 6l12 12M18 6L6 18"/>',
+        'link' => '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+        'ext' => '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     ];
 
     /** @param array<string, mixed> $portal */

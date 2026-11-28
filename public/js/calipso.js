@@ -151,11 +151,86 @@
     }));
   }
 
+  /* ---- Mes demandes : panneau de détail ---- */
+  function initDrawer() {
+    const drawer = $('#drawer'), scrim = $('.scrim'), list = $('#ticket-list');
+    if (!drawer || !scrim) return;
+    const listUrl = drawer.dataset.listUrl;
+    const baseTitle = document.title.replace(/^[A-Z]\d{6}_\d+ · /, '');
+    const setTitle = url => {
+      const m = url && url.match(/\/mes-demandes\/([^/?]+)/);
+      document.title = m ? `${decodeURIComponent(m[1])} · ${baseTitle}` : baseTitle;
+    };
+    let lastFocus = null, controller = null;
+
+    const isOpen = () => drawer.classList.contains('open');
+    const markCurrent = url => $$('.tkrow', list || document).forEach(r =>
+      r.setAttribute('aria-current', url && r.getAttribute('href') === url ? 'true' : 'false'));
+    const show = () => {
+      drawer.classList.add('open'); scrim.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false'); document.body.classList.add('drawer-open');
+    };
+    const focusClose = () => { const c = $('[data-drawer-close]', drawer); if (c) c.focus(); };
+
+    function open(url, push) {
+      lastFocus = document.activeElement;
+      if (controller) controller.abort();
+      controller = new AbortController();
+      drawer.innerHTML = '<div class="drawer-loading">Chargement…</div>';
+      show(); markCurrent(url); setTitle(url);
+      if (push) history.pushState({drawer: url}, '', url);
+      fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}, signal: controller.signal})
+        .then(r => r.ok ? r.text() : Promise.reject(r.status))
+        .then(html => { drawer.innerHTML = html; focusClose(); })
+        .catch(e => {
+          if (e && e.name === 'AbortError') return;
+          // En cas d'échec, on charge la page complète (le panneau y est ouvert côté serveur)
+          location.href = url;
+        });
+    }
+    function close(push) {
+      if (!isOpen()) return;
+      drawer.classList.remove('open'); scrim.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true'); document.body.classList.remove('drawer-open');
+      markCurrent(null); setTitle(null);
+      if (push) history.pushState({}, '', listUrl);
+      if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+    }
+
+    if (isOpen()) { document.body.classList.add('drawer-open'); focusClose(); }
+
+    if (list) list.addEventListener('click', e => {
+      const row = e.target.closest('.tkrow[data-drawer]');
+      if (!row || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      e.preventDefault();
+      open(row.dataset.drawer, true);
+    });
+    scrim.addEventListener('click', () => close(true));
+    drawer.addEventListener('click', e => {
+      if (e.target.closest('[data-drawer-close]')) { e.preventDefault(); close(true); return; }
+      const copy = e.target.closest('[data-copy-link]');
+      if (copy) {
+        const done = () => { copy.title = 'Lien copié'; copy.classList.add('copied'); setTimeout(() => { copy.title = 'Copier le lien de cette demande'; copy.classList.remove('copied'); }, 2000); };
+        if (navigator.clipboard) navigator.clipboard.writeText(copy.dataset.copyLink).then(done, () => window.prompt('Lien de la demande :', copy.dataset.copyLink));
+        else window.prompt('Lien de la demande :', copy.dataset.copyLink);
+      }
+    });
+    drawer.addEventListener('change', e => {
+      if (e.target.matches('[data-autosubmit-file]') && e.target.files.length) e.target.form.submit();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen()) close(true); });
+    window.addEventListener('popstate', () => {
+      const m = location.pathname.match(/\/mes-demandes\/([^/]+)$/);
+      if (m) open(location.pathname + location.search, false); else close(false);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initLogicToggle();
     initOrientation();
     initFilters();
     initBeneficiary();
     initAccess();
+    initDrawer();
   });
 })();

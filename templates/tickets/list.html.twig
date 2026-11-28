@@ -1,7 +1,6 @@
 {% extends 'base.html.twig' %}
 {% set nav = 'mes-demandes' %}
-{% block title %}Mes demandes · {{ parent() }}{% endblock %}
-{% block aside_class %}{% endblock %}
+{% block title %}{{ d ? d.t.number ~ ' · ' }}Mes demandes · {{ parent() }}{% endblock %}
 {% set pills = {wait: 'En attente de validation', run: 'En cours de traitement', ok: 'Terminée'} %}
 
 {% block body %}
@@ -12,9 +11,9 @@
         <a class="fchip" href="{{ path('app_my_requests', {statut: k}) }}" aria-pressed="{{ filter == k ? 'true' : 'false' }}">{{ label }} <span class="count">{{ counts[k] }}</span></a>
     {% endfor %}
 </div>
-<div class="list">
+<div class="list" id="ticket-list">
     {% for t in tickets %}
-        <a class="row" href="{{ path('app_my_requests', {statut: filter, rfc: t.number}) }}" {% if selected and selected.number == t.number %}style="background:var(--sunk)" aria-current="true"{% endif %}>
+        <a class="row tkrow" href="{{ path('app_ticket_show', {number: t.number, statut: filter}) }}" data-drawer="{{ path('app_ticket_show', {number: t.number, statut: filter}) }}" aria-current="{{ number == t.number ? 'true' : 'false' }}">
             <span class="t tk">
                 <span class="num">{{ t.number }}</span>
                 <span><span class="kind {{ t.isIncident ? 'p' : 'd' }}">{{ t.isIncident ? 'Problème' : 'Demande' }}</span>
@@ -27,34 +26,10 @@
         <div class="empty">{{ filter == 'terminees' ? 'Aucune demande terminée.' : 'Aucune demande en cours.' }} <a href="{{ path('app_home') }}">Faire une demande</a></div>
     {% endfor %}
 </div>
-{% endblock %}
 
-{% block aside %}
-<aside>
-{% if selected %}
-    {% set t = selected %}
-    <div class="panel">
-        <div class="eyebrow">{{ t.number }}</div>
-        <h3 style="margin-top:4px">{{ t.label }}</h3>
-        <ol class="steps">
-            <li class="on"><span><b>Envoyée</b><small>{{ t.submittedAt ? t.submittedAt|date('d/m/Y à H:i') : '' }}</small></span></li>
-            {% if not t.isIncident %}
-                <li class="{{ t.status == 'wait' ? 'cur' : 'on' }}"><span><b>Validation</b><small>{{ t.status == 'wait' ? 'En attente' : 'Validée' }}</small></span></li>
-            {% endif %}
-            <li class="{{ t.status == 'run' ? 'cur' : (t.status == 'ok' ? 'on' : '') }}"><span><b>Traitement</b><small>{{ t.status == 'run' ? 'En cours' : (t.status == 'ok' ? 'Fait' : 'À venir') }}</small></span></li>
-            <li class="{{ t.status == 'ok' ? 'on' : '' }}"><span><b>Terminée</b>{% if t.closedAt %}<small>{{ t.closedAt|date('d/m/Y') }}</small>{% endif %}</span></li>
-        </ol>
-        {% if t.statusLabel %}<p class="help" style="margin:0 0 10px">Statut EasyVista&nbsp;: {{ t.statusLabel }}</p>{% endif %}
-        {% if canMessage and t.isOpen %}
-            <form class="msgform" method="post" action="{{ path('app_ticket_message', {number: t.number}) }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('message' ~ t.number) }}">
-                <input type="hidden" name="statut" value="{{ filter }}">
-                <label for="msg" class="lbl"><b>Écrire aux intervenants</b></label>
-                <textarea class="input" id="msg" name="message" required placeholder="Une précision, une question…"></textarea>
-                <button class="btn">Envoyer le message</button>
-            </form>
-        {% endif %}
-    </div>
-{% endif %}
+{# Panneau de détail : ouvert côté serveur si l'URL désigne une demande, sinon rempli par JavaScript #}
+<div class="scrim {{ number ? 'open' }}" data-drawer-close></div>
+<aside class="drawer {{ number ? 'open' }}" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-title" aria-hidden="{{ number ? 'false' : 'true' }}" data-list-url="{{ path('app_my_requests', {statut: filter}) }}">
+    {% if number %}{{ include('tickets/_drawer.html.twig') }}{% endif %}
 </aside>
 {% endblock %}

@@ -5,6 +5,9 @@ namespace App\EasyVista;
 use App\EasyVista\Dto\Employee;
 use App\EasyVista\Dto\NewTicket;
 use App\EasyVista\Dto\Ticket;
+use App\EasyVista\Dto\TicketDetail;
+use App\EasyVista\Dto\TicketDocument;
+use App\EasyVista\Dto\TicketEvent;
 use App\EasyVista\Exception\EasyVistaException;
 
 /**
@@ -57,6 +60,26 @@ interface EasyVistaClientInterface
     public function listTickets(Employee $employee): array;
 
     public function getTicket(string $number): ?Ticket;
+
+    /** Détail complet, description comprise (GET /requests/{rfc}). */
+    public function getTicketDetail(string $number): ?TicketDetail;
+
+    /**
+     * Actions de l'incident ou de la demande, de la plus ancienne à la plus récente (GET /actions).
+     *
+     * @return list<TicketEvent>
+     */
+    public function listTicketEvents(TicketDetail $detail): array;
+
+    /** @return list<TicketDocument> */
+    public function listDocuments(string $number): array;
+
+    /**
+     * Contenu d'une pièce jointe.
+     *
+     * @return array{filename: string, content: string, contentType: string}
+     */
+    public function downloadDocument(string $number, string $documentId): array;
 
     /** Ajoute un message à destination des intervenants. */
     public function addMessage(string $number, string $message, Employee $author): void;

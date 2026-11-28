@@ -5,6 +5,7 @@ namespace App\Tests\Controller;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /** Parcours complets en mode démonstration (EASYVISTA_MODE=mock, agent CALIPSO_DEV_LOGIN). */
 final class PortalTest extends WebTestCase
@@ -140,15 +141,98 @@ final class PortalTest extends WebTestCase
         self::assertSelectorTextContains('table', 'INCIDENT · Incidents/IT/Equipement de proximité/Impression/Imprimante');
     }
 
-    public function testMyRequestsAndMessage(): void
+    public function testMyRequestsListLinksToDrawer(): void
     {
-        $crawler = $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes', 'rfc' => 'S261103_000101']);
-        self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('aside .eyebrow', 'S261103_000101');
+        $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes']);
 
-        $this->client->submit($crawler->selectButton('Envoyer le message')->form(['message' => 'Une précision']));
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#ticket-list a.tkrow[href="/mes-demandes/S261103_000101?statut=toutes"][data-drawer]');
+        self::assertSelectorExists('aside.drawer[aria-hidden="true"]:not(.open)');
+    }
+
+    public function testOldUrlRedirectsToDrawer(): void
+    {
+        $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes', 'rfc' => 'S261103_000101']);
+
+        self::assertResponseRedirects('/mes-demandes/S261103_000101?statut=toutes');
+    }
+
+    public function testDrawerPageShowsDetailTimelineAndValidation(): void
+    {
+        $this->client->request('GET', '/mes-demandes/S261103_000101', ['statut' => 'toutes']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('aside.drawer.open');
+        self::assertSelectorTextContains('#dr-title', 'Demander le référencement d\'un nouvel espace GECO');
+        self::assertSelectorTextContains('.track li.cur', 'Validation');
+        self::assertSelectorTextContains('.callout.wait', 'l\'accord de LE BRAS Morgane');
+        self::assertSelectorTextContains('.desc', 'Archives numériques 2027');
+        self::assertSelectorTextContains('.tl li:first-child', 'Demande envoyée');
+        self::assertSelectorTextContains('.tl li.now', 'Validation par le responsable hiérarchique');
+        self::assertSelectorTextContains('.tl li.future', 'Traitement après validation');
+        self::assertSelectorExists('#ticket-list a.tkrow[aria-current="true"]');
+    }
+
+    public function testDrawerFragmentForJavascript(): void
+    {
+        $this->client->xmlHttpRequest('GET', '/mes-demandes/I261030_000018');
+
+        self::assertResponseIsSuccessful();
+        $html = (string) $this->client->getResponse()->getContent();
+        self::assertStringNotContainsString('<html', $html);
+        self::assertStringContainsString('Message de l&#039;intervenant', $html);
+        self::assertStringContainsString('photo-ecran-multifonction.jpg', $html);
+    }
+
+    public function testClosedTicketShowsResolutionAndNoComposer(): void
+    {
+        $this->client->request('GET', '/mes-demandes/I260915_000007');
+
+        self::assertSelectorTextContains('.callout.ok', 'Profil reconstruit');
+        self::assertSelectorTextContains('.track li:last-child', 'Terminée');
+        self::assertSelectorNotExists('.composer textarea');
+        self::assertSelectorTextContains('.composer a.btn', 'Signaler à nouveau');
+    }
+
+    public function testUnknownTicketIs404(): void
+    {
+        $this->client->request('GET', '/mes-demandes/S999999_999999');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testMessageFromDrawerAppearsInTimeline(): void
+    {
+        $crawler = $this->client->request('GET', '/mes-demandes/S261103_000101', ['statut' => 'toutes']);
+        $this->client->submit($crawler->filter('form.composer')->form(['message' => 'Pouvez-vous accélérer ?']));
+
+        self::assertResponseRedirects('/mes-demandes/S261103_000101?statut=toutes');
         $this->client->followRedirect();
-        self::assertSelectorTextContains('.alert.success', 'transmis aux intervenants');
+        self::assertSelectorTextContains('.drawer .alert.success', 'transmis aux intervenants');
+        self::assertSelectorTextContains('.tl li.mine', 'Votre message');
+        self::assertSelectorTextContains('.tl li.mine .msg', 'Pouvez-vous accélérer ?');
+    }
+
+    public function testAttachAndDownloadDocument(): void
+    {
+        // Une demande créée pendant le test, pour que la pièce jointe soit conservée
+        $crawler = $this->client->request('GET', '/demande', ['service' => 'Demander un écran d\'ordinateur']);
+        $this->client->submit($crawler->selectButton('Envoyer la demande')->form());
+        $number = basename((string) $this->client->getResponse()->headers->get('Location'));
+
+        $file = tempnam(sys_get_temp_dir(), 'pj');
+        file_put_contents($file, 'contenu de test');
+        $crawler = $this->client->request('GET', '/mes-demandes/'.$number);
+        $form = $crawler->filter('form.attach')->form();
+        $this->client->request('POST', $form->getUri(), ['_token' => $form['_token']->getValue(), 'statut' => 'en-cours'], ['piece_jointe' => new UploadedFile($file, 'capture.txt', 'text/plain', null, true)]);
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('.drawer .alert.success', 'capture.txt');
+        $link = $this->client->getCrawler()->filter('.files a.file')->link();
+        $this->client->click($link);
+        self::assertResponseIsSuccessful();
+        self::assertSame('contenu de test', $this->client->getInternalResponse()->getContent());
+        self::assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
     }
 
     public function testColleagueSearch(): void

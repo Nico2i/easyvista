@@ -5,6 +5,9 @@ namespace App\EasyVista;
 use App\EasyVista\Dto\Employee;
 use App\EasyVista\Dto\NewTicket;
 use App\EasyVista\Dto\Ticket;
+use App\EasyVista\Dto\TicketDetail;
+use App\EasyVista\Dto\TicketDocument;
+use App\EasyVista\Dto\TicketEvent;
 use App\EasyVista\Exception\EasyVistaException;
 use App\Text\TextNormalizer;
 use Psr\Log\LoggerInterface;
@@ -182,6 +185,115 @@ class HttpEasyVistaClient implements EasyVistaClientInterface
         return [] === $data ? null : $this->toTicket($data);
     }
 
+    public function getTicketDetail(string $number): ?TicketDetail
+    {
+        try {
+            // Sans « fields », EasyVista renvoie tous les champs de la demande
+            $r = $this->getJson(sprintf('requests/%s', rawurlencode($number)));
+        } catch (EasyVistaException $e) {
+            if (404 === $e->getStatusCode()) {
+                return null;
+            }
+            throw $e;
+        }
+        if ([] === $r || '' === (string) self::field($r, 'RFC_NUMBER')) {
+            return null;
+        }
+
+        return new TicketDetail(
+            $this->toTicket($r),
+            (string) self::field($r, 'REQUEST_ID'),
+            $this->textOf($r, 'DESCRIPTION'),
+            $this->person($r, 'RECIPIENT'),
+            $this->person($r, 'REQUESTOR'),
+            (string) (self::field($r, 'LOCATION.LOCATION_PATH') ?? self::field($r, 'LOCATION_PATH') ?? ''),
+            (string) (self::field($r, 'DEPARTMENT.DEPARTMENT_PATH') ?? self::field($r, 'DEPARTMENT_PATH') ?? ''),
+            self::date(self::field($r, 'MAX_RESOLUTION_DATE_UT')),
+            (string) (self::field($r, 'REQUESTOR_PHONE') ?? ''),
+        );
+    }
+
+    public function listTicketEvents(TicketDetail $detail): array
+    {
+        $lang = strtoupper($this->lang());
+        $search = strtr((string) ($this->easyvistaOptions['recherche_actions'] ?? 'request_id:{request_id}'), [
+            '{request_id}' => self::quote($detail->requestId),
+            '{rfc}' => self::quote($detail->ticket->number),
+        ]);
+        $query = ['max_rows' => 100, 'sort' => 'start_date_ut+asc', 'search' => $search];
+        $fields = (string) ($this->easyvistaOptions['champs_actions'] ?? '');
+
+        try {
+            $data = $this->getJson('actions', '' !== $fields ? $query + ['fields' => $fields] : $query);
+        } catch (EasyVistaException $e) {
+            // Un champ inconnu de l'instance fait échouer la requête : on réessaie avec les champs par défaut
+            if ('' === $fields || !\in_array($e->getStatusCode(), [400, 500], true)) {
+                throw $e;
+            }
+            $this->logger->warning('EasyVista : champs_actions refusés ({message}), nouvel essai sans « fields »', ['message' => $e->getMessage()]);
+            $data = $this->getJson('actions', $query);
+        }
+
+        $events = [];
+        $follow = 0;
+        foreach (array_filter($data['records'] ?? [], 'is_array') as $r) {
+            // Les commentaires sont des liens à suivre : on en limite le nombre
+            $comment = $follow < 40 ? $this->textOf($r, 'COMMENT') : '';
+            if ('' === $comment && $follow < 40) {
+                $comment = $this->textOf($r, 'RESOLUTION');
+            }
+            ++$follow;
+            $events[] = new TicketEvent(
+                (string) self::field($r, 'ACTION_ID'),
+                (string) (self::field($r, 'ACTION_LABEL_'.$lang) ?? self::field($r, 'ACTION_LABEL_FR') ?? self::field($r, 'ACTION_LABEL_EN') ?? ''),
+                (string) (self::field($r, 'ACTION_TYPE.NAME_'.$lang) ?? self::field($r, 'ACTION_TYPE.NAME_FR') ?? self::field($r, 'ACTION_TYPE.NAME_EN') ?? ''),
+                self::date(self::field($r, 'START_DATE_UT') ?? self::field($r, 'CREATION_DATE_UT') ?? self::field($r, 'EXPECTED_START_DATE_UT')),
+                self::date(self::field($r, 'END_DATE_UT')),
+                (string) (self::field($r, 'DONE_BY.LAST_NAME') ?? ''),
+                (string) (self::field($r, 'DONE_BY.EMPLOYEE_ID') ?? self::field($r, 'DONE_BY_ID') ?? ''),
+                $comment,
+            );
+        }
+        usort($events, static fn (TicketEvent $a, TicketEvent $b) => ($a->startedAt?->getTimestamp() ?? 0) <=> ($b->startedAt?->getTimestamp() ?? 0));
+
+        return $events;
+    }
+
+    public function listDocuments(string $number): array
+    {
+        $data = $this->getJson(sprintf('requests/%s/documents', rawurlencode($number)));
+        $list = self::rawField($data, 'Documents') ?? self::rawField($data, 'records') ?? [];
+
+        $documents = [];
+        foreach (\is_array($list) ? $list : [] as $d) {
+            if (!\is_array($d)) {
+                continue;
+            }
+            $id = (string) (self::field($d, 'DOCUMENT_ID') ?? basename((string) self::field($d, 'HREF')));
+            if ('' !== $id) {
+                $documents[] = new TicketDocument($id, (string) (self::field($d, 'DOCUMENT') ?? self::field($d, 'FILENAME') ?? 'document-'.$id));
+            }
+        }
+
+        return $documents;
+    }
+
+    public function downloadDocument(string $number, string $documentId): array
+    {
+        $response = $this->request('GET', sprintf('requests/%s/documents/%s', rawurlencode($number), rawurlencode($documentId)));
+        $headers = $response->getHeaders(false);
+        $filename = 'document-'.$documentId;
+        if (preg_match('/filename\*?=(?:UTF-8\'\')?"?([^";]+)"?/i', $headers['content-disposition'][0] ?? '', $m)) {
+            $filename = rawurldecode($m[1]);
+        }
+
+        return [
+            'filename' => $filename,
+            'content' => $response->getContent(false),
+            'contentType' => $headers['content-type'][0] ?? 'application/octet-stream',
+        ];
+    }
+
     public function addMessage(string $number, string $message, Employee $author): void
     {
         $type = (string) ($this->easyvistaOptions['type_action_message'] ?? '');
@@ -246,6 +358,92 @@ class HttpEasyVistaClient implements EasyVistaClientInterface
         $lang = $this->lang();
 
         return sprintf('rfc_number,submit_date_ut,end_date_ut,status.status_%1$s,sd_catalog_path,recipient.last_name', $lang);
+    }
+
+    /**
+     * Personne d'une demande (RECIPIENT, REQUESTOR) : l'identifiant est la fin de son HREF.
+     *
+     * @param array<string, mixed> $record
+     */
+    private function person(array $record, string $key): ?Employee
+    {
+        $name = (string) (self::field($record, $key.'.LAST_NAME') ?? '');
+        $email = (string) (self::field($record, $key.'.E_MAIL') ?? '');
+        if ('' === $name && '' === $email) {
+            return null;
+        }
+        $id = (string) (self::field($record, $key.'.EMPLOYEE_ID') ?? '');
+        if ('' === $id && preg_match('#/employees/(\d+)#', (string) self::field($record, $key.'.HREF'), $m)) {
+            $id = $m[1];
+        }
+
+        return new Employee($id, '', $name, $email, (string) (self::field($record, $key.'.PHONE_NUMBER') ?? ''), (string) (self::field($record, $key.'.DEPARTMENT_PATH') ?? ''));
+    }
+
+    /**
+     * Texte d'un champ long (DESCRIPTION, COMMENT, RESOLUTION) : soit directement une chaîne,
+     * soit un objet { HREF } qu'il faut appeler. Le HTML est converti en texte brut.
+     * Une erreur ne bloque pas l'affichage : le texte est alors vide.
+     *
+     * @param array<string, mixed> $record
+     */
+    private function textOf(array $record, string $key): string
+    {
+        $value = self::field($record, $key);
+        if (\is_string($value) && '' !== trim($value)) {
+            return self::htmlToText($value);
+        }
+        $href = (string) (self::field($record, $key.'.HREF') ?? '');
+        if ('' === $href) {
+            return '';
+        }
+
+        try {
+            $body = $this->request('GET', $href)->getContent(false);
+        } catch (EasyVistaException $e) {
+            $this->logger->warning('EasyVista : {key} illisible ({message})', ['key' => $key, 'message' => $e->getMessage()]);
+
+            return '';
+        }
+        $data = json_decode($body, true);
+        if (\is_array($data)) {
+            // { "HREF": …, "PARENT_HREF": …, "COMMENT": "…" } : on prend le premier texte qui n'est pas un lien
+            foreach ($data as $k => $v) {
+                if (\is_string($v) && !\in_array(strtoupper((string) $k), ['HREF', 'PARENT_HREF'], true)) {
+                    return self::htmlToText($v);
+                }
+            }
+
+            return '';
+        }
+
+        return self::htmlToText($body);
+    }
+
+    private static function htmlToText(string $html): string
+    {
+        $text = preg_replace('#<\s*(br|/p|/div|/li|/tr|/h\d)\b[^>]*>#i', "\n", $html) ?? $html;
+        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $text = preg_replace("/[ \t\x{00A0}]+/u", ' ', $text) ?? $text;
+        $text = preg_replace("/ *\n */", "\n", $text) ?? $text;
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? $text);
+    }
+
+    /**
+     * Comme field(), mais renvoie aussi les tableaux.
+     *
+     * @param array<string, mixed> $record
+     */
+    private static function rawField(array $record, string $key): mixed
+    {
+        foreach ($record as $k => $v) {
+            if (0 === strcasecmp((string) $k, $key)) {
+                return $v;
+            }
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $record */

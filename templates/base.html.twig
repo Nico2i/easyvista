@@ -39,9 +39,12 @@
 {% block main %}
 <main><div class="wrap {% block aside_class %}single{% endblock %}">
     <div style="min-width:0">
-        {% for type, messages in app.flashes %}
-            {% for message in messages %}<div class="alert {{ type }}" role="status">{{ message }}</div>{% endfor %}
-        {% endfor %}
+        {# Quand le panneau de détail est ouvert, c'est lui qui affiche les messages #}
+        {% if number is not defined or not number %}
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}<div class="alert {{ type }}" role="status">{{ message }}</div>{% endfor %}
+            {% endfor %}
+        {% endif %}
         {% block body %}{% endblock %}
     </div>
     {% block aside %}{% endblock %}

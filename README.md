@@ -112,6 +112,12 @@ Tous réglables dans **`config/calipso/easyvista.yaml`** (repérés « À VÉRIF
 | `envoyer_demandeur` | Envoie `Requestor_Mail` / `Requestor_Name` pour que l'agent (et non le compte API) soit demandeur | `true` |
 | `recherche_mes_demandes` | Filtre `search` de « Mes demandes » | `requestor.e_mail:"{email}"` |
 | `type_action_message` / `EASYVISTA_MESSAGE_ACTION_TYPE_ID` | Type d'action pour « Écrire aux intervenants » (vide = bouton masqué) | vide |
+| `recherche_actions` | Filtre `search` des actions d'une demande (historique du panneau de détail) | `request_id:{request_id}` |
+| `champs_actions` | Champs demandés à `GET /actions` ; en cas de refus, nouvel essai avec les champs par défaut | voir le fichier |
+| `types_actions` | Type ou libellé d'action → catégorie affichée dans l'historique (icône, couleur) | validation, résolution, clôture… |
+| `lien_ticket` / `EASYVISTA_TICKET_URL` | Lien « Ouvrir dans EasyVista » du panneau, `{rfc}` = numéro (vide = bouton masqué) | vide |
+
+**Panneau de détail de « Mes demandes »** (maquette : `docs/maquettes/mes-demandes-panneau.html`) : il lit `GET /requests/{rfc}` (puis le lien de sa description), `GET /actions` (puis le lien du commentaire de chaque action) et `GET /requests/{rfc}/documents`. Le compte API doit pouvoir lire ces endpoints ; sinon le panneau s'affiche quand même, avec un message à la place de l'historique ou des pièces jointes. En mode API, un agent ne voit que les demandes dont il est demandeur ou bénéficiaire.
 | `statuts` | Libellés de statut → pastille (attente / en cours / terminé) | expressions régulières |
 
 Autre point à valider : le format d'envoi des pièces jointes (`POST /requests/{rfc}/documents`) n'est pas détaillé dans le swagger ; Calipso envoie `{"documents":[{"filename","filedata"(base64)}]}`. En cas d'échec, la demande est quand même créée et l'agent est prévenu.
