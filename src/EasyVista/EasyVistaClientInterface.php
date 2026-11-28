@@ -21,8 +21,13 @@ interface EasyVistaClientInterface
     /** Vrai si le client simule EasyVista (aucun appel réel). */
     public function isMock(): bool;
 
-    /** Version de l'API (GET /version) : sert à tester la connexion. */
-    public function version(): string;
+    /**
+     * Teste, sans rien créer, les droits du compte API sur les fonctions de lecture utilisées par le portail.
+     * Les profils EasyVista peuvent autoriser certains endpoints et pas d'autres (HTTP 403).
+     *
+     * @return list<array{endpoint: string, usage: string, ok: bool, detail: string}>
+     */
+    public function checkAccess(): array;
 
     /** @throws EasyVistaException */
     public function findEmployeeByLogin(string $login): ?Employee;

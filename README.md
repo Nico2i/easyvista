@@ -80,7 +80,11 @@ CALIPSO_DEV_LOGIN=votre.login
 php bin/console calipso:easyvista:check votre.login
 ```
 
-La commande affiche la version de l'API, l'agent trouvé, ses dernières demandes et les codes catalogue retrouvés pour quelques services. Le détail des erreurs HTTP est dans `var/log/dev.log`.
+La commande affiche :
+- les **droits du compte API** endpoint par endpoint (`GET /employees`, `/requests`, `/catalog-requests`, `/urgency`, `/version`). Un profil EasyVista peut autoriser certains endpoints et en refuser d'autres : ils répondent alors « 403 Unauthorized method for your profile ». Seul `GET /employees` est indispensable pour ouvrir le portail ; `/version` est purement informatif ;
+- l'agent trouvé, ses dernières demandes et les codes catalogue retrouvés pour quelques services.
+
+Les endpoints d'écriture (`POST /requests`, `/documents`, `/actions`) ne sont pas testés, pour ne rien créer : vérifiez avec l'administrateur EasyVista que le profil du compte API les autorise. Le détail des erreurs HTTP est dans `var/log/dev.log`.
 
 ### 2.3 Récupérer les codes catalogue
 

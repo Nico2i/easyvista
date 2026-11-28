@@ -42,13 +42,30 @@ final class CheckEasyVistaCommand extends Command
         $io->title('Vérification EasyVista '.($this->easyVista->isMock() ? '(mode démonstration)' : '(API)'));
         $ok = true;
 
-        try {
-            $io->writeln('Version de l\'API : <info>'.$this->easyVista->version().'</info>');
-        } catch (EasyVistaException $e) {
-            $io->error('Connexion impossible : '.$e->getMessage().' — voir var/log pour le détail.');
+        // 1. Droits du compte API, endpoint par endpoint (lecture seule)
+        $access = $this->easyVista->checkAccess();
+        $io->section('Droits du compte API (lecture)');
+        $io->table(['Endpoint', 'Utilisé pour', 'Résultat'], array_map(static fn (array $a) => [
+            $a['endpoint'],
+            $a['usage'],
+            $a['ok'] ? '<info>OK</info> · '.$a['detail'] : '<error>'.$a['detail'].'</error>',
+        ], $access));
+
+        $byEndpoint = array_column($access, 'ok', 'endpoint');
+        if (false === ($byEndpoint['GET /employees'] ?? true)) {
+            $io->error('Sans accès à GET /employees, le portail ne peut pas identifier les agents. Vérifiez l\'URL, les identifiants et le profil du compte API.');
 
             return Command::FAILURE;
         }
+        foreach (['GET /requests', 'GET /catalog-requests'] as $required) {
+            if (false === ($byEndpoint[$required] ?? true)) {
+                $ok = false;
+            }
+        }
+        $io->note([
+            'Non testés ici (ils créeraient des données) : POST /requests (création), POST /requests/{rfc}/documents (pièces jointes) et POST /requests/{rfc}/actions (messages).',
+            'Le profil du compte API doit aussi les autoriser.',
+        ]);
 
         if ($login = $input->getArgument('login')) {
             try {

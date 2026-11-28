@@ -41,9 +41,9 @@ class MockEasyVistaClient implements EasyVistaClientInterface
         return true;
     }
 
-    public function version(): string
+    public function checkAccess(): array
     {
-        return 'simulation (aucune connexion à EasyVista)';
+        return [['endpoint' => '(simulation)', 'usage' => 'Aucune connexion à EasyVista', 'ok' => true, 'detail' => 'mode démonstration']];
     }
 
     public function findEmployeeByLogin(string $login): ?Employee

@@ -39,12 +39,29 @@ class HttpEasyVistaClient implements EasyVistaClientInterface
         return false;
     }
 
-    public function version(): string
+    public function checkAccess(): array
     {
-        $response = $this->request('GET', 'version');
-        $content = trim($response->getContent(false));
+        $lang = $this->lang();
+        $probes = [
+            ['GET /employees', 'Identification des agents, recherche de collègues', 'employees', ['max_rows' => 1, 'fields' => 'employee_id']],
+            ['GET /requests', 'Mes demandes', 'requests', ['max_rows' => 1, 'fields' => 'rfc_number']],
+            ['GET /catalog-requests', 'Codes catalogue', 'catalog-requests', ['max_rows' => 1, 'fields' => 'code,title_'.$lang]],
+            ['GET /urgency', 'Liste des urgences (réglage « urgences »)', 'urgency', []],
+            ['GET /version', 'Facultatif (information)', 'version', []],
+        ];
 
-        return '' === $content ? 'inconnue' : $content;
+        $results = [];
+        foreach ($probes as [$endpoint, $usage, $path, $query]) {
+            try {
+                $data = $this->getJson($path, $query);
+                $detail = isset($data['total_record_count']) ? $data['total_record_count'].' enregistrement(s)' : 'accessible';
+                $results[] = ['endpoint' => $endpoint, 'usage' => $usage, 'ok' => true, 'detail' => $detail];
+            } catch (EasyVistaException $e) {
+                $results[] = ['endpoint' => $endpoint, 'usage' => $usage, 'ok' => false, 'detail' => $e->getMessage()];
+            }
+        }
+
+        return $results;
     }
 
     public function findEmployeeByLogin(string $login): ?Employee
@@ -297,10 +314,13 @@ class HttpEasyVistaClient implements EasyVistaClientInterface
             $error = json_decode($body, true);
             $detail = \is_array($error) ? (string) ($error['error'] ?? $error['message'] ?? $body) : $body;
             $this->logger->error('EasyVista {method} {path} : HTTP {status} {detail}', ['method' => $method, 'path' => $path, 'status' => $status, 'detail' => mb_substr($detail, 0, 500)]);
+            $endpoint = $method.' /'.preg_replace('#/.*$#', '', ltrim($path, '/'));
             $message = match (true) {
-                401 === $status, 403 === $status => 'EasyVista a refusé l\'authentification du portail.',
+                401 === $status => 'EasyVista a refusé l\'authentification du portail (identifiants ou jeton invalides).',
+                // 403 : le compte est reconnu mais son profil n'autorise pas cet endpoint
+                403 === $status => sprintf('Le profil du compte API n\'autorise pas %s (HTTP 403%s).', $endpoint, '' !== trim($detail) ? ' : '.mb_substr(trim($detail), 0, 120) : ''),
                 404 === $status => 'Élément introuvable dans EasyVista.',
-                default => sprintf('EasyVista a renvoyé une erreur (%d).', $status),
+                default => sprintf('EasyVista a renvoyé une erreur (%d) sur %s.', $status, $endpoint),
             };
             throw new EasyVistaException($message, $status);
         }

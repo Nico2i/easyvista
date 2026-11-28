@@ -85,6 +85,23 @@ final class HttpEasyVistaClientTest extends TestCase
         (new HttpEasyVistaClient($http, self::OPTIONS, new NullLogger(), 'svc', 'pwd'))->findEmployeeByLogin('agent');
     }
 
+    public function testCheckAccessReportsForbiddenEndpointsWithoutFailing(): void
+    {
+        $http = new MockHttpClient(static function (string $method, string $url) {
+            return str_contains($url, '/version')
+                ? new MockResponse('{"error":"Unauthorized method for your profile"}', ['http_code' => 403])
+                : new JsonMockResponse(['total_record_count' => '12', 'records' => []]);
+        }, 'https://ev.example/api/v1/50004/');
+
+        $access = array_column((new HttpEasyVistaClient($http, self::OPTIONS, new NullLogger()))->checkAccess(), null, 'endpoint');
+
+        self::assertTrue($access['GET /employees']['ok']);
+        self::assertSame('12 enregistrement(s)', $access['GET /employees']['detail']);
+        self::assertFalse($access['GET /version']['ok']);
+        self::assertStringContainsString('profil du compte API n\'autorise pas GET /version', $access['GET /version']['detail']);
+        self::assertStringContainsString('Unauthorized method for your profile', $access['GET /version']['detail']);
+    }
+
     public function testFindCatalogCodeMatchesTitle(): void
     {
         $http = new MockHttpClient(new JsonMockResponse(['records' => [
