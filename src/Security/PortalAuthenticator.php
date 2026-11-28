@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\EasyVista\EasyVistaClientInterface;
 use App\EasyVista\Exception\EasyVistaException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,16 +22,21 @@ use Twig\Environment;
  * reverse proxy…) fournit le login de l'agent dans une variable serveur (REMOTE_USER par défaut).
  * Le portail n'affiche jamais de formulaire de connexion.
  *
- * En développement, CALIPSO_DEV_LOGIN remplace le SSO.
+ * En développement, CALIPSO_DEV_LOGIN (dans .env.local) remplace le SSO ; en mode démonstration,
+ * l'agent fictif « agent.demo » est utilisé à défaut.
  *
  * Les erreurs sont levées en CustomUserMessageAuthenticationException : contrairement à
  * « utilisateur introuvable », Symfony ne les masque pas, et l'agent voit la vraie raison.
  */
 final class PortalAuthenticator extends AbstractAuthenticator implements AuthenticationEntryPointInterface
 {
+    /** Agent utilisé en mode démonstration quand aucun login n'est fourni */
+    public const DEMO_LOGIN = 'agent.demo';
+
     public function __construct(
         private readonly Environment $twig,
         private readonly PortalUserProvider $users,
+        private readonly EasyVistaClientInterface $easyVista,
         private readonly string $serverVar = 'REMOTE_USER',
         private readonly string $devLogin = '',
         #[Autowire('%kernel.debug%')] private readonly bool $debug = false,
@@ -111,6 +117,10 @@ final class PortalAuthenticator extends AbstractAuthenticator implements Authent
         $raw = trim((string) ($request->server->get($this->serverVar) ?? $request->server->get('REDIRECT_'.$this->serverVar) ?? ''));
         if ('' === $raw) {
             $raw = trim($this->devLogin);
+        }
+        // Démonstration (EASYVISTA_MODE=mock) : agent fictif si rien n'est fourni. Jamais en mode api.
+        if ('' === $raw && $this->easyVista->isMock()) {
+            $raw = self::DEMO_LOGIN;
         }
 
         return '' === $raw ? null : $raw;

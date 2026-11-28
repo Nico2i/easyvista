@@ -54,13 +54,26 @@ final class PortalAuthenticatorTest extends KernelTestCase
         self::assertSame(['jdupont', 'CG22\\jdupont'], $tried);
     }
 
-    private function authenticator(callable $find): PortalAuthenticator
+    public function testDevLoginIsUsedWithoutSso(): void
+    {
+        self::assertSame('CARDONNI', $this->authenticator(static fn () => null, devLogin: 'CARDONNI')->loginFrom(new Request()));
+    }
+
+    public function testDemoAgentOnlyInMockMode(): void
+    {
+        self::assertSame('agent.demo', $this->authenticator(static fn () => null, mock: true)->loginFrom(new Request()));
+        // Mode api sans SSO ni CALIPSO_DEV_LOGIN : personne n'est connecté (page 401)
+        self::assertNull($this->authenticator(static fn () => null, mock: false)->loginFrom(new Request()));
+    }
+
+    private function authenticator(callable $find, string $devLogin = '', bool $mock = false): PortalAuthenticator
     {
         self::bootKernel();
         $client = $this->createStub(EasyVistaClientInterface::class);
         $client->method('findEmployeeByLogin')->willReturnCallback($find);
+        $client->method('isMock')->willReturn($mock);
 
-        return new PortalAuthenticator(self::getContainer()->get(Environment::class), new PortalUserProvider($client), 'REMOTE_USER', '', true);
+        return new PortalAuthenticator(self::getContainer()->get(Environment::class), new PortalUserProvider($client), $client, 'REMOTE_USER', $devLogin, true);
     }
 
     private function request(string $remoteUser): Request

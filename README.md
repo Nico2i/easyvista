@@ -43,7 +43,9 @@ composer install
 php -S localhost:8000 -t public
 ```
 
-Ouvrir http://localhost:8000. En développement, l'agent connecté est `CALIPSO_DEV_LOGIN` (fichier `.env.dev`).
+Ouvrir http://localhost:8000. En mode démonstration, l'agent connecté est l'agent fictif `agent.demo` ; pour un autre login, définir `CALIPSO_DEV_LOGIN` dans `.env.local`.
+
+> Symfony charge `.env`, puis `.env.local`, puis `.env.dev`, puis `.env.dev.local` : une valeur de `.env.dev` écrase celle de `.env.local`. Mettez vos réglages personnels dans `.env.local` (ou `.env.dev.local`) et ne définissez pas les mêmes variables dans `.env.dev`.
 Si la [CLI Symfony](https://symfony.com/download) est installée, `symfony serve` fonctionne aussi.
 
 Lancer les tests :
