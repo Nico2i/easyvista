@@ -6,14 +6,23 @@
 {% block body %}
 <div class="sec-title"><h2>Mes demandes</h2><small>Problèmes signalés et demandes, au même endroit</small></div>
 {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
-<div class="filters" style="margin-bottom:12px">
-    {% for k, label in {'en-cours': 'En cours', 'terminees': 'Terminées', 'toutes': 'Toutes'} %}
-        <a class="fchip" href="{{ path('app_my_requests', {statut: k}) }}" aria-pressed="{{ filter == k ? 'true' : 'false' }}">{{ label }} <span class="count">{{ counts[k] }}</span></a>
-    {% endfor %}
+<div class="list-filters">
+    <div class="filters" role="group" aria-label="Avancement">
+        {% for k, label in {'en-cours': 'En cours', 'terminees': 'Terminées', 'toutes': 'Toutes'} %}
+            <a class="fchip" href="{{ path('app_my_requests', listParams|merge({statut: k})) }}" aria-pressed="{{ filter == k ? 'true' : 'false' }}">{{ label }} <span class="count">{{ counts[k] }}</span></a>
+        {% endfor %}
+    </div>
+    <div class="seg type-seg" role="group" aria-label="Type">
+        {% for k, label in {tous: 'Tout', problemes: 'Problèmes', demandes: 'Demandes'} %}
+            {% set params = k == 'tous' ? listParams|filter((v, key) => key != 'type') : listParams|merge({type: k}) %}
+            <a href="{{ path('app_my_requests', params) }}" aria-current="{{ type == k ? 'true' : 'false' }}"><span class="dot {{ k == 'problemes' ? 'p' : (k == 'demandes' ? '' : 'all') }}"></span>{{ label }} <span class="count">{{ typeCounts[k] }}</span></a>
+        {% endfor %}
+    </div>
 </div>
 <div class="list" id="ticket-list">
     {% for t in tickets %}
-        <a class="row tkrow" href="{{ path('app_ticket_show', {number: t.number, statut: filter}) }}" data-drawer="{{ path('app_ticket_show', {number: t.number, statut: filter}) }}" aria-current="{{ number == t.number ? 'true' : 'false' }}">
+        {% set showUrl = path('app_ticket_show', listParams|merge({number: t.number})) %}
+        <a class="row tkrow" href="{{ showUrl }}" data-drawer="{{ showUrl }}" aria-current="{{ number == t.number ? 'true' : 'false' }}">
             <span class="t tk">
                 <span class="num">{{ t.number }}</span>
                 <span><span class="kind {{ t.isIncident ? 'p' : 'd' }}">{{ t.isIncident ? 'Problème' : 'Demande' }}</span>
@@ -23,13 +32,16 @@
             </span>
         </a>
     {% else %}
-        <div class="empty">{{ filter == 'terminees' ? 'Aucune demande terminée.' : 'Aucune demande en cours.' }} <a href="{{ path('app_home') }}">Faire une demande</a></div>
+        <div class="empty">
+            {% if type != 'tous' %}Aucun résultat avec ces filtres.
+            {% else %}{{ filter == 'terminees' ? 'Aucune demande terminée.' : (filter == 'toutes' ? 'Aucune demande.' : 'Aucune demande en cours.') }}{% endif %}
+            <a href="{{ path('app_home') }}">Faire une demande</a></div>
     {% endfor %}
 </div>
 
 {# Panneau de détail : ouvert côté serveur si l'URL désigne une demande, sinon rempli par JavaScript #}
 <div class="scrim {{ number ? 'open' }}" data-drawer-close></div>
-<aside class="drawer {{ number ? 'open' }}" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-title" aria-hidden="{{ number ? 'false' : 'true' }}" data-list-url="{{ path('app_my_requests', {statut: filter}) }}">
+<aside class="drawer {{ number ? 'open' }}" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-title" aria-hidden="{{ number ? 'false' : 'true' }}" data-list-url="{{ path('app_my_requests', listParams) }}">
     {% if number %}{{ include('tickets/_drawer.html.twig') }}{% endif %}
 </aside>
 {% endblock %}

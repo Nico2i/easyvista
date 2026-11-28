@@ -1,6 +1,6 @@
 {# Contenu du panneau de détail d'une demande (d = contexte préparé par TicketController / TicketView) #}
 {% set pills = {wait: 'En attente de validation', run: 'En cours de traitement', ok: 'Terminée'} %}
-{% set listUrl = path('app_my_requests', {statut: filter}) %}
+{% set listUrl = path('app_my_requests', listParams) %}
 
 {% if d is null %}
     <div class="dr-head">
@@ -74,7 +74,7 @@
             {% if t.isOpen %}
                 <form class="attach" method="post" action="{{ path('app_ticket_attach', {number: t.number}) }}" enctype="multipart/form-data">
                     <input type="hidden" name="_token" value="{{ csrf_token('attach' ~ t.number) }}">
-                    <input type="hidden" name="statut" value="{{ filter }}">
+                    {% for k, v in listParams %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
                     <label class="btn" for="pj-{{ t.number }}">Ajouter un fichier</label>
                     <input id="pj-{{ t.number }}" name="piece_jointe" type="file" class="visually-hidden" data-autosubmit-file required>
                     <noscript><button class="btn">Envoyer</button></noscript>
@@ -106,7 +106,7 @@
             {% if d.canMessage %}
                 <form class="composer" method="post" action="{{ path('app_ticket_message', {number: t.number}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('message' ~ t.number) }}">
-                    <input type="hidden" name="statut" value="{{ filter }}">
+                    {% for k, v in listParams %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
                     <label class="lbl" for="msg-{{ t.number }}"><b>Écrire aux intervenants</b></label>
                     <textarea class="input" id="msg-{{ t.number }}" name="message" required placeholder="Une précision, une question…"></textarea>
                     <div class="row-act"><span class="help">Votre message apparaîtra dans l'historique.</span><button class="btn primary">Envoyer</button></div>

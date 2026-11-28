@@ -330,3 +330,15 @@ body.show-logic .src{display:block}
 .drawer-loading{padding:40px;text-align:center;color:var(--muted)}
 body.drawer-open{overflow:hidden}
 .icon-btn.copied{border-color:var(--ok);color:var(--ok)}
+/* Mes demandes : filtres avancement + type */
+.list-filters{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.type-seg a{display:inline-flex;align-items:center;gap:7px}
+.type-seg .dot{width:8px;height:8px}
+.type-seg .dot.all{background:linear-gradient(90deg,var(--prob) 50%,var(--accent) 50%)}
+.type-seg a[aria-current="true"] .dot{box-shadow:0 0 0 2px var(--on-accent)}
+.type-seg a[aria-current="true"] .count{background:rgba(255,255,255,.22);color:inherit}
+@media (max-width:640px){
+  .list-filters{flex-direction:column;align-items:stretch}
+  .list-filters .seg{display:flex;width:100%}
+  .list-filters .seg a{flex:1;justify-content:center;padding:8px 6px;font-size:13px;gap:5px}
+}

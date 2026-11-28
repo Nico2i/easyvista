@@ -150,6 +150,39 @@ final class PortalTest extends WebTestCase
         self::assertSelectorExists('aside.drawer[aria-hidden="true"]:not(.open)');
     }
 
+    public function testFilterByType(): void
+    {
+        $crawler = $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes', 'type' => 'problemes']);
+
+        self::assertResponseIsSuccessful();
+        $numbers = $crawler->filter('#ticket-list .tkrow .num')->each(static fn ($n) => $n->text());
+        self::assertNotEmpty($numbers);
+        foreach ($numbers as $n) {
+            self::assertStringStartsWith('I', $n);
+        }
+        // Compteurs : 2 problèmes et 6 demandes parmi toutes ; parmi les problèmes, 1 terminé
+        self::assertSelectorTextContains('.type-seg a[aria-current="true"]', 'Problèmes 2');
+        self::assertSelectorTextContains('.type-seg a[href$="type=demandes"]', 'Demandes 6');
+        self::assertSelectorTextContains('.filters a[href*="statut=terminees"]', 'Terminées 1');
+        // Les filtres sont conservés vers le panneau et à sa fermeture
+        self::assertSelectorExists('.tkrow[href="/mes-demandes/I261030_000018?statut=toutes&type=problemes"]');
+
+        $this->client->request('GET', '/mes-demandes/I261030_000018', ['statut' => 'toutes', 'type' => 'problemes']);
+        self::assertSelectorExists('.drawer[data-list-url="/mes-demandes?statut=toutes&type=problemes"]');
+        self::assertSelectorExists('.composer input[name="type"][value="problemes"]');
+    }
+
+    public function testDemandesOnly(): void
+    {
+        $crawler = $this->client->request('GET', '/mes-demandes', ['type' => 'demandes']);
+
+        foreach ($crawler->filter('#ticket-list .tkrow .num')->each(static fn ($n) => $n->text()) as $n) {
+            self::assertStringStartsWith('S', $n);
+        }
+        // « Tout » retire le filtre de type mais garde l'avancement
+        self::assertSelectorExists('.type-seg a[href="/mes-demandes?statut=en-cours"]');
+    }
+
     public function testOldUrlRedirectsToDrawer(): void
     {
         $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes', 'rfc' => 'S261103_000101']);

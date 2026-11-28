@@ -25,6 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class TicketController extends AbstractController
 {
     private const FILTERS = ['en-cours', 'terminees', 'toutes'];
+    private const TYPES = ['tous', 'problemes', 'demandes'];
 
     /** @param array<string, mixed> $easyvistaOptions */
     public function __construct(
@@ -39,7 +40,7 @@ final class TicketController extends AbstractController
     {
         // Ancienne forme d'URL (?rfc=…) : on ouvre directement le panneau
         if ('' !== ($rfc = (string) $request->query->get('rfc', ''))) {
-            return $this->redirectToRoute('app_ticket_show', ['number' => $rfc, 'statut' => $request->query->get('statut')]);
+            return $this->redirectToRoute('app_ticket_show', ['number' => $rfc] + $this->listParams($request));
         }
 
         return $this->render('tickets/list.html.twig', $this->listContext($request));
@@ -62,7 +63,7 @@ final class TicketController extends AbstractController
         }
 
         if ($request->isXmlHttpRequest()) {
-            return $this->render('tickets/_drawer.html.twig', ['d' => $drawer, 'drawerError' => $error, 'filter' => $this->filter($request), 'number' => $number]);
+            return $this->render('tickets/_drawer.html.twig', ['d' => $drawer, 'drawerError' => $error, 'filter' => $this->filter($request), 'listParams' => $this->listParams($request), 'number' => $number]);
         }
 
         return $this->render('tickets/list.html.twig', [
@@ -91,7 +92,7 @@ final class TicketController extends AbstractController
             }
         }
 
-        return $this->redirectToRoute('app_ticket_show', ['number' => $number, 'statut' => $request->request->get('statut')]);
+        return $this->redirectToRoute('app_ticket_show', ['number' => $number] + $this->listParams($request));
     }
 
     #[Route('/mes-demandes/{number}/documents', name: 'app_ticket_attach', methods: ['POST'])]
@@ -112,7 +113,7 @@ final class TicketController extends AbstractController
             }
         }
 
-        return $this->redirectToRoute('app_ticket_show', ['number' => $number, 'statut' => $request->request->get('statut')]);
+        return $this->redirectToRoute('app_ticket_show', ['number' => $number] + $this->listParams($request));
     }
 
     #[Route('/mes-demandes/{number}/documents/{id}', name: 'app_ticket_document', methods: ['GET'])]
@@ -188,6 +189,7 @@ final class TicketController extends AbstractController
     private function listContext(Request $request): array
     {
         $filter = $this->filter($request);
+        $type = $this->typeFilter($request);
         $error = null;
         $tickets = [];
         try {
@@ -196,18 +198,27 @@ final class TicketController extends AbstractController
             $error = $e->getMessage();
         }
 
+        $byStatus = static fn (string $f) => static fn (Ticket $t) => match ($f) {
+            'terminees' => !$t->isOpen(),
+            'toutes' => true,
+            default => $t->isOpen(),
+        };
+        $byType = static fn (string $ty) => static fn (Ticket $t) => match ($ty) {
+            'problemes' => $t->isIncident(),
+            'demandes' => !$t->isIncident(),
+            default => true,
+        };
+        // Chaque compteur tient compte de l'autre filtre : « Problèmes 3 » parmi les demandes en cours
+        $ofType = array_filter($tickets, $byType($type));
+        $ofStatus = array_filter($tickets, $byStatus($filter));
+
         return [
-            'tickets' => array_values(array_filter($tickets, static fn (Ticket $t) => match ($filter) {
-                'terminees' => !$t->isOpen(),
-                'toutes' => true,
-                default => $t->isOpen(),
-            })),
+            'tickets' => array_values(array_filter($ofType, $byStatus($filter))),
             'filter' => $filter,
-            'counts' => [
-                'en-cours' => \count(array_filter($tickets, static fn (Ticket $t) => $t->isOpen())),
-                'terminees' => \count(array_filter($tickets, static fn (Ticket $t) => !$t->isOpen())),
-                'toutes' => \count($tickets),
-            ],
+            'type' => $type,
+            'listParams' => $this->listParams($request),
+            'counts' => array_combine(self::FILTERS, array_map(static fn (string $f) => \count(array_filter($ofType, $byStatus($f))), self::FILTERS)),
+            'typeCounts' => array_combine(self::TYPES, array_map(static fn (string $ty) => \count(array_filter($ofStatus, $byType($ty))), self::TYPES)),
             'error' => $error,
             'd' => null,
             'drawerError' => null,
@@ -220,6 +231,25 @@ final class TicketController extends AbstractController
         $filter = (string) ($request->query->get('statut') ?? $request->request->get('statut') ?? 'en-cours');
 
         return \in_array($filter, self::FILTERS, true) ? $filter : 'en-cours';
+    }
+
+    private function typeFilter(Request $request): string
+    {
+        $type = (string) ($request->query->get('type') ?? $request->request->get('type') ?? 'tous');
+
+        return \in_array($type, self::TYPES, true) ? $type : 'tous';
+    }
+
+    /**
+     * Filtres de la liste, à conserver dans les liens et après un envoi depuis le panneau.
+     *
+     * @return array<string, string>
+     */
+    private function listParams(Request $request): array
+    {
+        $type = $this->typeFilter($request);
+
+        return ['statut' => $this->filter($request)] + ('tous' !== $type ? ['type' => $type] : []);
     }
 
     private function portalUser(): PortalUser
