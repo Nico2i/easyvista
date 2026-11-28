@@ -342,3 +342,53 @@ body.drawer-open{overflow:hidden}
   .list-filters .seg{display:flex;width:100%}
   .list-filters .seg a{flex:1;justify-content:center;padding:8px 6px;font-size:13px;gap:5px}
 }
+
+/* --- Mes demandes : tableau (recherche, tri, filtres par colonne) --- */
+.tk-tools{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin-bottom:10px}
+.tk-search{position:relative;flex:1 1 320px;max-width:520px}
+.tk-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;pointer-events:none}
+.tk-search .input{padding-left:38px;background:var(--surface)}
+.tk-count{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.tk-reset{margin-left:auto}
+.tk-wrap{overflow-x:auto}
+.tk-table{font-size:15px}
+.tk-table th{padding:0;vertical-align:bottom;white-space:nowrap}
+.tk-table th button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;padding:11px 12px 8px;cursor:pointer;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tk-table th button:hover{color:var(--ink)}
+.tk-table th button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.tk-table th button::after{content:"";width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;opacity:.25}
+.tk-table th[aria-sort="ascending"] button,.tk-table th[aria-sort="descending"] button{color:var(--accent)}
+.tk-table th[aria-sort="ascending"] button::after{border-top:0;border-bottom:5px solid currentColor;opacity:1}
+.tk-table th[aria-sort="descending"] button::after{opacity:1}
+.tk-table .col-filters td{padding:0 8px 10px;border-top:0}
+.tk-table .col-filters .input{padding:6px 8px;font-size:13px;background:var(--bg);min-width:0}
+.tk-table tbody td{vertical-align:middle;padding:11px 12px}
+.tk-table tbody tr.tkrow{cursor:pointer}
+.tk-table tbody tr.tkrow:hover{background:var(--sunk)}
+.tk-table tbody tr.tkrow[aria-current="true"]{background:var(--sunk);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-table tr[hidden]{display:none!important}
+.tk-table .c-num{width:1%;white-space:nowrap}
+.tk-table .c-type{width:1%;white-space:nowrap}
+.tk-table .c-date{width:1%;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tk-table .c-status{width:1%;white-space:nowrap}
+.tk-num{font-family:var(--f-mono);font-weight:700;font-size:14px;color:var(--ink);text-decoration:none}
+.tk-num:hover{color:var(--accent);text-decoration:underline}
+.tk-label{font-weight:700}
+.tk-for{display:block;color:var(--muted);font-size:13px}
+.tk-empty td{text-align:center;color:var(--muted);padding:22px}
+@media (max-width:760px){
+  .tk-wrap{overflow:visible;background:transparent;border:0}
+  .tk-table thead tr:first-child{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+  .tk-table thead th{border:1px solid var(--line);border-radius:20px;background:var(--surface)}
+  .tk-table thead th button{padding:6px 12px}
+  .tk-table .col-filters{display:none}
+  .tk-table,.tk-table tbody{display:block}
+  .tk-table tbody tr.tkrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+  .tk-table tbody td{display:block;padding:0;border:0;width:auto!important}
+  .tk-table td.c-num{grid-column:1}.tk-table td.c-type{grid-column:2;text-align:right}
+  .tk-table td.c-label{grid-column:1/-1}
+  .tk-table td.c-date{grid-column:1;color:var(--muted);font-size:13px;align-self:center}
+  .tk-table td.c-status{grid-column:2;text-align:right}
+  .tk-table .tk-empty{display:block}
+}
+@media (max-width:760px){.tk-table thead{display:block}}

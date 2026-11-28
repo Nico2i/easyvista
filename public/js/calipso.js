@@ -165,7 +165,7 @@
 
     const isOpen = () => drawer.classList.contains('open');
     const markCurrent = url => $$('.tkrow', list || document).forEach(r =>
-      r.setAttribute('aria-current', url && r.getAttribute('href') === url ? 'true' : 'false'));
+      r.setAttribute('aria-current', url && (r.dataset.drawer || r.getAttribute('href')) === url ? 'true' : 'false'));
     const show = () => {
       drawer.classList.add('open'); scrim.classList.add('open');
       drawer.setAttribute('aria-hidden', 'false'); document.body.classList.add('drawer-open');
@@ -225,12 +225,109 @@
     });
   }
 
+  /* ---- Mes demandes : recherche, tri et filtres par colonne ---- */
+  function initTicketTable() {
+    const table = $('#ticket-list.tk-table');
+    if (!table) return;
+    const tbody = $('tbody', table);
+    const rows = $$('tr.tkrow', tbody);
+    if (!rows.length) return;
+    const tools = $(`[data-table-tools="#ticket-list"]`);
+    const search = tools && $('[data-table-search]', tools);
+    const count = tools && $('[data-table-count]', tools);
+    const reset = tools && $('[data-table-reset]', tools);
+    const empty = $('[data-table-empty]', tbody);
+    const colFilters = $$('[data-filter-col]', table);
+    const sortButtons = $$('[data-sort]', table);
+    const key = table.dataset.storageKey;
+    const DEFAULT = {q: '', sort: 'date', dir: 'desc', f: {}};
+
+    // Valeurs pré-calculées : texte normalisé de chaque ligne et de chaque colonne
+    const data = rows.map((r, i) => ({
+      row: r, index: i, all: norm(r.textContent),
+      number: r.dataset.number || '', type: r.dataset.type || '', label: r.dataset.label || '',
+      date: r.dataset.date || '', status: r.dataset.status || ''
+    }));
+
+    let state;
+    try { state = Object.assign({}, DEFAULT, JSON.parse(sessionStorage.getItem(key) || '{}')); } catch (e) { state = {...DEFAULT}; }
+    state.f = state.f || {};
+    const save = () => { try { sessionStorage.setItem(key, JSON.stringify(state)); } catch (e) { /* stockage indisponible */ } };
+
+    // Restaure les champs (en ignorant une valeur absente des listes, ex. un statut qui n'existe plus)
+    if (search) search.value = state.q;
+    colFilters.forEach(el => {
+      const v = state.f[el.dataset.filterCol] || '';
+      if (el.tagName === 'SELECT' && v && !$$('option', el).some(o => o.value === v)) { delete state.f[el.dataset.filterCol]; return; }
+      el.value = v;
+    });
+
+    const collator = new Intl.Collator('fr', {numeric: true, sensitivity: 'base'});
+    function apply() {
+      const q = words(state.q);
+      const now = Date.now();
+      const matches = d => {
+        if (q.length && !q.every(w => d.all.includes(w))) return false;
+        for (const el of colFilters) {
+          const col = el.dataset.filterCol, v = state.f[col];
+          if (!v) continue;
+          if ('filterPeriod' in el.dataset) {
+            if (!d.date || (now - Date.parse(d.date)) > v * 86400000) return false;
+          } else if ('filterExact' in el.dataset) {
+            if (d[col] !== v) return false;
+          } else if (!words(v).every(w => norm(d[col]).includes(w))) return false;
+        }
+        return true;
+      };
+      const sorted = [...data].sort((a, b) => {
+        const r = state.sort === 'date' ? a.date.localeCompare(b.date) : collator.compare(a[state.sort], b[state.sort]);
+        return (state.dir === 'asc' ? r : -r) || a.index - b.index;
+      });
+      let shown = 0;
+      sorted.forEach(d => {
+        const ok = matches(d);
+        d.row.hidden = !ok;
+        if (ok) shown++;
+        tbody.insertBefore(d.row, empty);
+      });
+      if (empty) empty.hidden = shown > 0;
+      if (count) count.textContent = shown === data.length
+        ? `${shown} ${shown > 1 ? 'résultats' : 'résultat'}`
+        : `${shown} sur ${data.length}`;
+      const filtered = !!state.q || Object.values(state.f).some(Boolean);
+      if (reset) reset.hidden = !filtered && state.sort === DEFAULT.sort && state.dir === DEFAULT.dir;
+      sortButtons.forEach(b => b.closest('th').setAttribute('aria-sort',
+        b.dataset.sort === state.sort ? (state.dir === 'asc' ? 'ascending' : 'descending') : 'none'));
+      save();
+    }
+
+    let timer;
+    if (search) search.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { state.q = search.value; apply(); }, 120); });
+    colFilters.forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
+      state.f[el.dataset.filterCol] = el.value; apply();
+    }));
+    sortButtons.forEach(b => b.addEventListener('click', () => {
+      if (state.sort === b.dataset.sort) state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+      else { state.sort = b.dataset.sort; state.dir = b.dataset.sortType === 'date' ? 'desc' : 'asc'; }
+      apply();
+    }));
+    if (reset) reset.addEventListener('click', () => {
+      state = {...DEFAULT, f: {}};
+      if (search) search.value = '';
+      colFilters.forEach(el => { el.value = ''; });
+      apply();
+      if (search) search.focus();
+    });
+    apply();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initLogicToggle();
     initOrientation();
     initFilters();
     initBeneficiary();
     initAccess();
+    initTicketTable();
     initDrawer();
   });
 })();

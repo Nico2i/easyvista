@@ -26,6 +26,8 @@ final class TicketController extends AbstractController
 {
     private const FILTERS = ['en-cours', 'terminees', 'toutes'];
     private const TYPES = ['tous', 'problemes', 'demandes'];
+    /** Libellés par défaut quand EasyVista ne renvoie pas le libellé du statut (identiques au gabarit) */
+    private const STATUS_LABELS = [Ticket::STATUS_WAIT => 'En attente de validation', Ticket::STATUS_RUNNING => 'En cours de traitement', Ticket::STATUS_DONE => 'Terminée'];
 
     /** @param array<string, mixed> $easyvistaOptions */
     public function __construct(
@@ -212,8 +214,17 @@ final class TicketController extends AbstractController
         $ofType = array_filter($tickets, $byType($type));
         $ofStatus = array_filter($tickets, $byStatus($filter));
 
+        $shown = array_values(array_filter($ofType, $byStatus($filter)));
+        // Statuts présents, pour le filtre de la colonne « Statut »
+        $statusLabels = array_values(array_unique(array_map(
+            static fn (Ticket $t) => '' !== $t->statusLabel ? $t->statusLabel : (self::STATUS_LABELS[$t->status] ?? $t->status),
+            $shown,
+        )));
+        sort($statusLabels);
+
         return [
-            'tickets' => array_values(array_filter($ofType, $byStatus($filter))),
+            'tickets' => $shown,
+            'statusLabels' => $statusLabels,
             'filter' => $filter,
             'type' => $type,
             'listParams' => $this->listParams($request),

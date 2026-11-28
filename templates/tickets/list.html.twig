@@ -19,24 +19,78 @@
         {% endfor %}
     </div>
 </div>
-<div class="list" id="ticket-list">
+
+{% if tickets %}
+<div class="tk-tools" data-table-tools="#ticket-list">
+    <div class="tk-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input class="input" type="search" data-table-search placeholder="Rechercher : numéro, objet, collègue, statut…" aria-label="Rechercher dans mes demandes" autocomplete="off">
+    </div>
+    <span class="tk-count" data-table-count aria-live="polite">{{ tickets|length }} {{ tickets|length > 1 ? 'résultats' : 'résultat' }}</span>
+    <button type="button" class="btn tk-reset" data-table-reset hidden>Effacer les filtres</button>
+</div>
+{% endif %}
+
+<div class="tablewrap tk-wrap">
+<table class="tk-table" id="ticket-list" data-storage-key="calipso-mes-demandes">
+    <thead>
+        <tr>
+            <th scope="col" class="c-num" aria-sort="none"><button type="button" data-sort="number" data-sort-type="text">N°</button></th>
+            <th scope="col" class="c-type" aria-sort="none"><button type="button" data-sort="type" data-sort-type="text">Type</button></th>
+            <th scope="col" class="c-label" aria-sort="none"><button type="button" data-sort="label" data-sort-type="text">Objet</button></th>
+            <th scope="col" class="c-date" aria-sort="descending"><button type="button" data-sort="date" data-sort-type="date">Envoyée le</button></th>
+            <th scope="col" class="c-status" aria-sort="none"><button type="button" data-sort="status" data-sort-type="text">Statut</button></th>
+        </tr>
+        {% if tickets %}
+        <tr class="col-filters">
+            <td><input class="input" data-filter-col="number" placeholder="Filtrer" aria-label="Filtrer par numéro"></td>
+            <td>
+                <select class="input" data-filter-col="type" data-filter-exact aria-label="Filtrer par type">
+                    <option value="">Tous</option><option value="Problème">Problème</option><option value="Demande">Demande</option>
+                </select>
+            </td>
+            <td><input class="input" data-filter-col="label" placeholder="Filtrer" aria-label="Filtrer par objet"></td>
+            <td>
+                <select class="input" data-filter-col="date" data-filter-period aria-label="Filtrer par date d'envoi">
+                    <option value="">Toutes</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="90">3 derniers mois</option><option value="365">12 derniers mois</option>
+                </select>
+            </td>
+            <td>
+                <select class="input" data-filter-col="status" data-filter-exact aria-label="Filtrer par statut">
+                    <option value="">Tous</option>
+                    {% for s in statusLabels %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                </select>
+            </td>
+        </tr>
+        {% endif %}
+    </thead>
+    <tbody>
     {% for t in tickets %}
         {% set showUrl = path('app_ticket_show', listParams|merge({number: t.number})) %}
-        <a class="row tkrow" href="{{ showUrl }}" data-drawer="{{ showUrl }}" aria-current="{{ number == t.number ? 'true' : 'false' }}">
-            <span class="t tk">
-                <span class="num">{{ t.number }}</span>
-                <span><span class="kind {{ t.isIncident ? 'p' : 'd' }}">{{ t.isIncident ? 'Problème' : 'Demande' }}</span>
-                    <strong>{{ t.label }}</strong>
-                    <small>{% if t.submittedAt %}Envoyée le {{ t.submittedAt|date('d/m/Y') }}{% endif %}{% if t.recipientName and t.recipientName != app.user.name %} · pour {{ t.recipientName }}{% endif %}</small></span>
-                <span class="pill {{ t.status }}">{{ t.statusLabel ?: pills[t.status] }}</span>
-            </span>
-        </a>
-    {% else %}
-        <div class="empty">
-            {% if type != 'tous' %}Aucun résultat avec ces filtres.
-            {% else %}{{ filter == 'terminees' ? 'Aucune demande terminée.' : (filter == 'toutes' ? 'Aucune demande.' : 'Aucune demande en cours.') }}{% endif %}
-            <a href="{{ path('app_home') }}">Faire une demande</a></div>
+        {% set statusLabel = t.statusLabel ?: pills[t.status] %}
+        <tr class="tkrow" data-drawer="{{ showUrl }}" aria-current="{{ number == t.number ? 'true' : 'false' }}"
+            data-number="{{ t.number }}" data-type="{{ t.isIncident ? 'Problème' : 'Demande' }}" data-label="{{ t.label }}"
+            data-date="{{ t.submittedAt ? t.submittedAt|date('c') : '' }}" data-status="{{ statusLabel }}">
+            <td class="c-num" data-th="N°"><a class="tk-num" href="{{ showUrl }}">{{ t.number }}</a></td>
+            <td class="c-type" data-th="Type"><span class="kind {{ t.isIncident ? 'p' : 'd' }}">{{ t.isIncident ? 'Problème' : 'Demande' }}</span></td>
+            <td class="c-label" data-th="Objet"><span class="tk-label">{{ t.label }}</span>
+                {% if t.recipientName and t.recipientName != app.user.name %}<small class="tk-for">pour {{ t.recipientName }}</small>{% endif %}</td>
+            <td class="c-date" data-th="Envoyée le">{% if t.submittedAt %}<time datetime="{{ t.submittedAt|date('c') }}">{{ t.submittedAt|date('d/m/Y') }}</time>{% else %}—{% endif %}</td>
+            <td class="c-status" data-th="Statut"><span class="pill {{ t.status }}">{{ statusLabel }}</span></td>
+        </tr>
     {% endfor %}
+        <tr class="tk-empty" {% if tickets %}hidden{% endif %} data-table-empty>
+            <td colspan="5">
+                <span data-empty-filtered {% if not tickets %}hidden{% endif %}>Aucune demande ne correspond à votre recherche.</span>
+                {% if not tickets %}
+                    {% if type != 'tous' %}Aucun résultat avec ces filtres.
+                    {% else %}{{ filter == 'terminees' ? 'Aucune demande terminée.' : (filter == 'toutes' ? 'Aucune demande.' : 'Aucune demande en cours.') }}{% endif %}
+                    <a href="{{ path('app_home') }}">Faire une demande</a>
+                {% endif %}
+            </td>
+        </tr>
+    </tbody>
+</table>
 </div>
 
 {# Panneau de détail : ouvert côté serveur si l'URL désigne une demande, sinon rempli par JavaScript #}

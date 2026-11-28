@@ -73,7 +73,7 @@ final class PortalTest extends WebTestCase
         self::assertSelectorTextContains('.ticket', 'I'.date('ymd'));
 
         $this->client->request('GET', '/mes-demandes');
-        self::assertSelectorTextContains('.list', 'Imprimante : L\'imprimante du 2e étage');
+        self::assertSelectorTextContains('#ticket-list', 'Imprimante : L\'imprimante du 2e étage');
     }
 
     public function testIncidentWithoutDescriptionIsRejected(): void
@@ -146,7 +146,7 @@ final class PortalTest extends WebTestCase
         $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes']);
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('#ticket-list a.tkrow[href="/mes-demandes/S261103_000101?statut=toutes"][data-drawer]');
+        self::assertSelectorExists('#ticket-list tr.tkrow[data-drawer="/mes-demandes/S261103_000101?statut=toutes"] a.tk-num[href="/mes-demandes/S261103_000101?statut=toutes"]');
         self::assertSelectorExists('aside.drawer[aria-hidden="true"]:not(.open)');
     }
 
@@ -155,7 +155,7 @@ final class PortalTest extends WebTestCase
         $crawler = $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes', 'type' => 'problemes']);
 
         self::assertResponseIsSuccessful();
-        $numbers = $crawler->filter('#ticket-list .tkrow .num')->each(static fn ($n) => $n->text());
+        $numbers = $crawler->filter('#ticket-list .tkrow .tk-num')->each(static fn ($n) => $n->text());
         self::assertNotEmpty($numbers);
         foreach ($numbers as $n) {
             self::assertStringStartsWith('I', $n);
@@ -165,7 +165,7 @@ final class PortalTest extends WebTestCase
         self::assertSelectorTextContains('.type-seg a[href$="type=demandes"]', 'Demandes 6');
         self::assertSelectorTextContains('.filters a[href*="statut=terminees"]', 'Terminées 1');
         // Les filtres sont conservés vers le panneau et à sa fermeture
-        self::assertSelectorExists('.tkrow[href="/mes-demandes/I261030_000018?statut=toutes&type=problemes"]');
+        self::assertSelectorExists('.tkrow[data-drawer="/mes-demandes/I261030_000018?statut=toutes&type=problemes"]');
 
         $this->client->request('GET', '/mes-demandes/I261030_000018', ['statut' => 'toutes', 'type' => 'problemes']);
         self::assertSelectorExists('.drawer[data-list-url="/mes-demandes?statut=toutes&type=problemes"]');
@@ -176,11 +176,31 @@ final class PortalTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/mes-demandes', ['type' => 'demandes']);
 
-        foreach ($crawler->filter('#ticket-list .tkrow .num')->each(static fn ($n) => $n->text()) as $n) {
+        foreach ($crawler->filter('#ticket-list .tkrow .tk-num')->each(static fn ($n) => $n->text()) as $n) {
             self::assertStringStartsWith('S', $n);
         }
         // « Tout » retire le filtre de type mais garde l'avancement
         self::assertSelectorExists('.type-seg a[href="/mes-demandes?statut=en-cours"]');
+    }
+
+    public function testTableHasSearchSortAndColumnFilters(): void
+    {
+        $crawler = $this->client->request('GET', '/mes-demandes', ['statut' => 'toutes']);
+
+        self::assertSelectorExists('input[data-table-search]');
+        self::assertSame(['number', 'type', 'label', 'date', 'status'], $crawler->filter('#ticket-list th button[data-sort]')->each(static fn ($b) => $b->attr('data-sort')));
+        self::assertSelectorExists('#ticket-list th.c-date[aria-sort="descending"]');
+        self::assertSame(['number', 'type', 'label', 'date', 'status'], $crawler->filter('#ticket-list [data-filter-col]')->each(static fn ($f) => $f->attr('data-filter-col')));
+        // Le filtre « Statut » propose les statuts présents dans la liste
+        $statuses = $crawler->filter('select[data-filter-col="status"] option')->each(static fn ($o) => $o->attr('value'));
+        self::assertContains('Clôturé', $statuses);
+        self::assertContains('En attente de validation', $statuses);
+        // Numéro en gras dans la première colonne, données pour le tri et les filtres sur la ligne
+        $row = $crawler->filter('#ticket-list tr.tkrow[data-number="I261030_000018"]');
+        self::assertSame('I261030_000018', trim($row->filter('td')->first()->filter('a.tk-num')->text()));
+        self::assertSame('Problème', $row->attr('data-type'));
+        self::assertSame('En cours de traitement', $row->attr('data-status'));
+        self::assertStringStartsWith('2026-10-30T08:55', (string) $row->attr('data-date'));
     }
 
     public function testOldUrlRedirectsToDrawer(): void
@@ -203,7 +223,7 @@ final class PortalTest extends WebTestCase
         self::assertSelectorTextContains('.tl li:first-child', 'Demande envoyée');
         self::assertSelectorTextContains('.tl li.now', 'Validation par le responsable hiérarchique');
         self::assertSelectorTextContains('.tl li.future', 'Traitement après validation');
-        self::assertSelectorExists('#ticket-list a.tkrow[aria-current="true"]');
+        self::assertSelectorExists('#ticket-list tr.tkrow[aria-current="true"]');
     }
 
     public function testDrawerFragmentForJavascript(): void
