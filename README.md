@@ -103,6 +103,7 @@ Tous réglables dans **`config/calipso/easyvista.yaml`** (repérés « À VÉRIF
 
 | Réglage | Rôle | Valeur par défaut |
 |---|---|---|
+| `champs_identifiant` | Champ(s) de la fiche agent comparés au login Windows, essayés dans l'ordre (`login`, `identification`, `e_mail`…). Le login est essayé sans domaine puis tel que reçu (`DOMAINE\login`) | `[login]` |
 | `code_incident_defaut` / `EASYVISTA_DEFAULT_INCIDENT_CODE` | Code du « Sujet par défaut » (signalement sans sujet) | recherche par chemin `Incidents/IT/Sujet par défaut` |
 | `code_demande_generique` / `EASYVISTA_GENERIC_REQUEST_CODE` | Code de la « Demande générique » | recherche par intitulé |
 | `urgences` | Gêne exprimée → `Urgency_ID` (voir `GET /urgencies`) | 1 / 2 / 3 |

@@ -9,6 +9,10 @@ parameters:
         code_incident_defaut: "%env(default::EASYVISTA_DEFAULT_INCIDENT_CODE)%"
         # Code catalogue de la « Demande générique ». À VÉRIFIER
         code_demande_generique: "%env(default::EASYVISTA_GENERIC_REQUEST_CODE)%"
+        # Champs de la fiche agent (GET /employees) comparés au login Windows, essayés dans l'ordre.
+        # Exemples : login, identification, e_mail. À VÉRIFIER : comparer avec une fiche agent dans Postman.
+        champs_identifiant: [login]
+
         # Préfixe du chemin des sujets d'incident dans le catalogue
         prefixe_incidents: "Incidents/IT"
 

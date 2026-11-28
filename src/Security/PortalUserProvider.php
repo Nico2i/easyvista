@@ -21,20 +21,30 @@ final class PortalUserProvider implements UserProviderInterface
     {
     }
 
+    /**
+     * @throws EasyVistaException si EasyVista ne répond pas ou refuse l'appel
+     */
+    public function findUser(string $login): ?PortalUser
+    {
+        $employee = $this->easyVista->findEmployeeByLogin($login);
+
+        return null === $employee ? null : new PortalUser($employee);
+    }
+
     public function loadUserByIdentifier(string $identifier): UserInterface
     {
         try {
-            $employee = $this->easyVista->findEmployeeByLogin($identifier);
+            $user = $this->findUser($identifier);
         } catch (EasyVistaException $e) {
             throw new AuthenticationServiceException($e->getMessage(), 0, $e);
         }
-        if (null === $employee) {
+        if (null === $user) {
             $e = new UserNotFoundException(sprintf('Agent « %s » introuvable dans EasyVista.', $identifier));
             $e->setUserIdentifier($identifier);
             throw $e;
         }
 
-        return new PortalUser($employee);
+        return $user;
     }
 
     /** L'agent est conservé en session : pas de nouvel appel à EasyVista à chaque page. */

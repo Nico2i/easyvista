@@ -21,7 +21,10 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
  */
 class HttpEasyVistaClient implements EasyVistaClientInterface
 {
-    private const EMPLOYEE_FIELDS = 'employee_id,last_name,e_mail,login,phone_number,department_path,location_path';
+    private const EMPLOYEE_FIELDS = 'employee_id,last_name,e_mail,login,identification,phone_number,department_path,location_path';
+
+    /** @var list<array{search: string, count: int}> recherches d'agent effectuées (diagnostic) */
+    private array $employeeSearches = [];
 
     /** @param array<string, mixed> $easyvistaOptions */
     public function __construct(
@@ -66,14 +69,30 @@ class HttpEasyVistaClient implements EasyVistaClientInterface
 
     public function findEmployeeByLogin(string $login): ?Employee
     {
-        $data = $this->getJson('employees', [
-            'max_rows' => 2,
-            'fields' => self::EMPLOYEE_FIELDS,
-            'search' => sprintf('login:"%s"', self::quote($login)),
-        ]);
-        $record = $data['records'][0] ?? null;
+        $this->employeeSearches = [];
+        $fields = array_filter(array_map('strval', (array) ($this->easyvistaOptions['champs_identifiant'] ?? ['login'])));
+        foreach ($fields ?: ['login'] as $field) {
+            $search = sprintf('%s:"%s"', strtolower($field), self::quote($login));
+            $data = $this->getJson('employees', ['max_rows' => 2, 'fields' => self::EMPLOYEE_FIELDS, 'search' => $search]);
+            $records = array_values(array_filter($data['records'] ?? [], 'is_array'));
+            $this->employeeSearches[] = ['search' => $search, 'count' => \count($records)];
+            $this->logger->info('EasyVista : recherche agent {search} : {count} résultat(s)', ['search' => $search, 'count' => \count($records)]);
+            if ($records) {
+                return $this->toEmployee($records[0]);
+            }
+        }
 
-        return \is_array($record) ? $this->toEmployee($record) : null;
+        return null;
+    }
+
+    /**
+     * Recherches effectuées lors du dernier findEmployeeByLogin() (affichées par calipso:easyvista:check).
+     *
+     * @return list<array{search: string, count: int}>
+     */
+    public function lastEmployeeSearches(): array
+    {
+        return $this->employeeSearches;
     }
 
     public function searchEmployees(string $query, int $max = 10): array

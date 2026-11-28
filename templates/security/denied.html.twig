@@ -4,6 +4,14 @@
 <div class="formcard denied">
     <h1>Accès impossible</h1>
     <p>{{ reason }}</p>
+    {% if debug %}
+        <div class="alert info" style="text-align:left">
+            <b>Diagnostic (mode développement)</b><br>
+            Login reçu : <code>{{ login ?: '(aucun)' }}</code> · mode EasyVista : <code>{{ easyvista_simule ? 'mock' : 'api' }}</code><br>
+            Pour voir les recherches envoyées à EasyVista&nbsp;:<br>
+            <code>php bin/console calipso:easyvista:check {{ login ?: 'votre.login' }}</code>
+        </div>
+    {% endif %}
     <p class="help">Besoin d'aide&nbsp;? Hotline DSN&nbsp;: <b>{{ portail.hotline_numero }}</b></p>
 </div>
 {% endblock %}

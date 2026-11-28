@@ -104,6 +104,26 @@ final class HttpEasyVistaClientTest extends TestCase
         self::assertStringContainsString('Unauthorized method for your profile', $access['GET /catalog-requests']['detail']);
     }
 
+    public function testEmployeeIsSearchedOnEachConfiguredField(): void
+    {
+        $searches = [];
+        $http = new MockHttpClient(static function (string $method, string $url) use (&$searches) {
+            parse_str((string) parse_url($url, \PHP_URL_QUERY), $q);
+            $searches[] = $q['search'];
+
+            return new JsonMockResponse(['records' => str_starts_with($q['search'], 'identification:')
+                ? [['EMPLOYEE_ID' => '42', 'LAST_NAME' => 'DUPONT Jean', 'IDENTIFICATION' => 'jdupont']]
+                : []]);
+        }, 'https://ev.example/api/v1/50004/');
+
+        $client = new HttpEasyVistaClient($http, ['champs_identifiant' => ['login', 'identification']] + self::OPTIONS, new NullLogger());
+        $employee = $client->findEmployeeByLogin('jdupont');
+
+        self::assertSame('42', $employee?->id);
+        self::assertSame(['login:"jdupont"', 'identification:"jdupont"'], $searches);
+        self::assertSame([['search' => 'login:"jdupont"', 'count' => 0], ['search' => 'identification:"jdupont"', 'count' => 1]], $client->lastEmployeeSearches());
+    }
+
     public function testFindCatalogCodeMatchesTitle(): void
     {
         $http = new MockHttpClient(new JsonMockResponse(['records' => [

@@ -6,6 +6,7 @@ use App\Catalog\Catalog;
 use App\EasyVista\CatalogCodeResolver;
 use App\EasyVista\EasyVistaClientInterface;
 use App\EasyVista\Exception\EasyVistaException;
+use App\EasyVista\HttpEasyVistaClient;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -70,8 +71,21 @@ final class CheckEasyVistaCommand extends Command
         if ($login = $input->getArgument('login')) {
             try {
                 $e = $this->easyVista->findEmployeeByLogin($login);
-                $e ? $io->writeln(sprintf('Agent %s : <info>%s</info> (%s, id %s)', $login, $e->name, $e->email ?: 'sans e-mail', $e->id))
-                   : $io->warning('Agent introuvable : '.$login);
+                if ($this->easyVista instanceof HttpEasyVistaClient) {
+                    foreach ($this->easyVista->lastEmployeeSearches() as $s) {
+                        $io->writeln(sprintf('  GET /employees?search=%s → %d résultat(s)', $s['search'], $s['count']));
+                    }
+                }
+                if ($e) {
+                    $io->writeln(sprintf('Agent %s : <info>%s</info> (%s, id %s, login EasyVista « %s »)', $login, $e->name, $e->email ?: 'sans e-mail', $e->id, $e->login));
+                } else {
+                    $io->warning([
+                        'Agent introuvable : '.$login,
+                        'Ouvrez votre fiche dans Postman (GET /employees?search=last_name:"VOTRE NOM") et regardez quel champ contient votre login Windows (LOGIN, IDENTIFICATION…), et sous quelle forme (avec ou sans domaine).',
+                        'Réglez ensuite champs_identifiant dans config/calipso/easyvista.yaml.',
+                    ]);
+                    $ok = false;
+                }
                 if ($e) {
                     $tickets = $this->easyVista->listTickets($e);
                     $io->writeln(sprintf('Mes demandes : <info>%d</info> trouvée(s)', \count($tickets)));
